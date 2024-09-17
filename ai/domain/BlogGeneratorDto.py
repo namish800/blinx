@@ -1,8 +1,5 @@
 from typing import TypedDict
 
-from domain.BrandPersona import BrandPersona
-import json
-
 
 class BlogGeneratorDto(TypedDict):
     query: str

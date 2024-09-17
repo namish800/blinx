@@ -1,28 +1,9 @@
-import requests
-from bs4 import BeautifulSoup
-from dotenv import load_dotenv
+from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 
-from langgraph.graph import StateGraph, END
-from typing import TypedDict, List
-from langgraph.checkpoint.sqlite import SqliteSaver
-from langchain_core.messages import SystemMessage, HumanMessage, AIMessage, ChatMessage
-from langchain_openai import ChatOpenAI
-from tavily import TavilyClient
-
-import re
-from langchain.schema import BaseOutputParser
-from langchain_google_genai import ChatGoogleGenerativeAI
-
-_ = load_dotenv()
-
-import requests
-from langchain_core.output_parsers import StrOutputParser, JsonOutputParser
-from bs4 import BeautifulSoup
-from prompts.title_gen import title_generator_sys_prompt, section_header_generator_sys_prompts, \
-    section_header_generator_user_prompts, add_creatives_sys_prompt, add_creatives_user_prompt, \
-    keyword_generator_sys_prompt
-from utils.llm_util import model, model_openai
+from ai.prompts.title_gen import title_generator_sys_prompt, section_header_generator_sys_prompts, \
+    section_header_generator_user_prompts, keyword_generator_sys_prompt
+from ai.utils.llm_util import model_openai
 
 
 class Editor:
@@ -111,10 +92,3 @@ class Editor:
                                   """})
 
         return {"sections": response['sections']}
-
-
-if __name__ == "__main__":
-    load_dotenv()
-    agent = Editor()
-
-    print(agent.get_titles())

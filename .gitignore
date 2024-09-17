@@ -1,0 +1,10 @@
+.env
+.ipynb_checkpoints
+
+.idea
+
+checkpoints.sqlite
+checkpoints.sqlite-shm
+checkpoints.sqlite-wal
+
+__pycache__

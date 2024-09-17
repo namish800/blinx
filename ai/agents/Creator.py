@@ -1,16 +1,16 @@
-import json
-
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 
-from prompts.title_gen import add_creatives_sys_prompt, add_creatives_user_prompt
-from utils.llm_util import model_openai, text_to_image_model
+from ai.prompts.title_gen import add_creatives_sys_prompt, add_creatives_user_prompt
+
+from ai.utils.ImageGenerator import SocialMediaImageGenerator
+from ai.utils.llm_util import model_openai
 
 
 class Creator:
     def __init__(self):
         self.model = model_openai
-        self.text_to_image_model = text_to_image_model
+        self.image_gen = SocialMediaImageGenerator()
 
     def add_creatives(self, blog_generator_state: dict):
         prompt_template = ChatPromptTemplate.from_messages(
@@ -37,8 +37,7 @@ class Creator:
                               """
         })
 
-        img_urls = [self.get_img_urls(prompt) for prompt in response['prompts']]
+        img_urls = [self.image_gen.generate_image(prompt) for prompt in response['prompts']]
         return {"image_prompts": response['prompts'], "img_urls": img_urls}
 
-    def get_img_urls(self, prompt: str):
-        return self.text_to_image_model.run(prompt)
+

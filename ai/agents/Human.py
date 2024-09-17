@@ -1,4 +1,4 @@
-from enums.review_state_enum import ReviewState
+from ai.enums.review_state_enum import ReviewState
 import json
 
 
