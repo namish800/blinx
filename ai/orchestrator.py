@@ -1,7 +1,7 @@
 import json
 
-from agents.BlogGeneratorAgent import BlogGeneratorAgent
-from domain import BlogGeneratorDto
+from ai.agents.BlogGeneratorAgent import BlogGeneratorAgent
+from ai.domain import BlogGeneratorDto
 
 
 def dict_to_blog(blog_dict):
