@@ -1,7 +1,5 @@
 from typing import TypedDict, List
 
-from domain.BrandPersona import BrandPersona
-
 
 class BlogGeneratorState(TypedDict):
     query: str

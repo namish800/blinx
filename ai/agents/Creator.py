@@ -1,10 +1,10 @@
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 
-from prompts.title_gen import add_creatives_sys_prompt, add_creatives_user_prompt
+from ai.prompts.title_gen import add_creatives_sys_prompt, add_creatives_user_prompt
 
-from utils.ImageGenerator import SocialMediaImageGenerator
-from utils.llm_util import model_openai
+from ai.utils.ImageGenerator import SocialMediaImageGenerator
+from ai.utils.llm_util import model_openai
 
 
 class Creator:

@@ -1,10 +1,9 @@
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_google_genai import ChatGoogleGenerativeAI
 
-from prompts.write_prompts import intro_writer_sys_prompt, intro_writer_user_prompt, section_writer_sys_prompt, \
+from ai.prompts.write_prompts import intro_writer_sys_prompt, intro_writer_user_prompt, section_writer_sys_prompt, \
     section_writer_user_prompt
-from utils.llm_util import model, model_openai
+from ai.utils.llm_util import model, model_openai
 
 
 class Writer:
