@@ -1,3 +1,5 @@
+import json
+
 from agents.BlogGeneratorAgent import BlogGeneratorAgent
 from domain import BlogGeneratorDto
 
@@ -74,11 +76,11 @@ if __name__ == "__main__":
         max_suggestions=3,
         max_sections=5,
         max_images=2,
-        include_images=False
+        include_images=True
     )
-    sessionId = "1005"
+    sessionId = "1013"
     print(run_blog_gen_workflow(session_id=sessionId, blog_gen_dto=blog_data))
     print(run_blog_gen_workflow(session_id=sessionId, title='Puppy Training 101: Essential Tips for New Dog Owners'))
     sections = [{'section_header': "Understanding Your Puppy's Behavior", 'description': 'Explain the basics of puppy behavior, including common traits and tendencies. Discuss the importance of patience and consistency in training. Provide insights into how puppies learn and the role of positive reinforcement.'}, {'section_header': 'Housebreaking Made Easy', 'description': 'Offer step-by-step guidance on housebreaking a puppy. Include tips on creating a schedule, recognizing signs that your puppy needs to go, and how to handle accidents. Emphasize the importance of routine and positive reinforcement.'}, {'section_header': 'Mastering Basic Commands', 'description': "Detail the process of teaching essential commands such as 'sit,' 'stay,' 'come,' and 'leave it.' Provide clear instructions and tips for effective training sessions. Highlight the benefits of these commands for safety and good behavior."}, {'section_header': 'Socialization: The Key to a Well-Adjusted Pup', 'description': 'Discuss the importance of socializing your puppy with other dogs, people, and different environments. Offer practical advice on how to safely introduce your puppy to new experiences. Explain the long-term benefits of proper socialization.'}, {'section_header': 'Dealing with Common Challenges', 'description': 'Address common training challenges such as biting, chewing, and barking. Provide solutions and strategies to manage and correct these behaviors. Include tips on how to stay calm and consistent during difficult moments.'}]
-    print(run_blog_gen_workflow(session_id=sessionId, sections=sections))
+    print(json.dumps(run_blog_gen_workflow(session_id=sessionId, sections=sections)))
 
