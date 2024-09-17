@@ -9,13 +9,9 @@ class Human:
     def review_titles(self, blog_generator_state: dict):
         generated_titles = blog_generator_state.get('generated_titles')
 
-        print("Please select the title you like")
-        for title in generated_titles:
-            print(title)
+        print("User selected topic: " + blog_generator_state.get("selected_title"))
 
-        user_input = input("Please input the title you like")
-
-        return {"selected_title": user_input}
+        pass
 
     def review_state(self, blog_generator_state: dict):
         generated_sections = blog_generator_state.get('sections')

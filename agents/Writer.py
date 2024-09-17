@@ -19,9 +19,9 @@ class Writer:
 
         print("Writing Intro")
         chain = prompt_template | self.model | parser
-        response = chain.invoke({"tone": blog_generator_state.get("brand_persona").tone,
-                                 "audience": blog_generator_state.get("brand_persona").audience,
-                                 "language": blog_generator_state.get("brand_persona").language,
+        response = chain.invoke({"tone": blog_generator_state.get("brand_persona").get("tone"),
+                                 "audience": blog_generator_state.get("brand_persona").get("audience"),
+                                 "language": blog_generator_state.get("brand_persona").get("language"),
                                  "title": blog_generator_state.get("selected_title"),
                                  "keywords": blog_generator_state.get("keywords"),
                                  "format_example": """

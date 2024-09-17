@@ -1,74 +1,5 @@
-from typing import Literal
-
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langgraph.constants import END
-from langgraph.graph import StateGraph
-
-from agents.Creator import Creator
-from agents.Editor import Editor
-from agents.Human import Human
-from agents.Writer import Writer
-from domain.BrandPersona import BrandPersona
-from domain.State import BlogGeneratorState
-
-
-def check_include_images(state: dict):
-    if state.get('include_images'):
-        print("Going to generate images")
-        return "creator"
-    return END
-
-
-class BlogGeneratorAgent:
-    def __init__(self):
-        self.model = ChatGoogleGenerativeAI(
-            model="gemini-1.5-pro",
-            temperature=0,
-            max_tokens=None,
-            timeout=None,
-            max_retries=2,
-            # other params...
-        )
-
-    def init_workflow(self):
-        editor_agent = Editor()
-        human_agent = Human()
-        writer_agent = Writer()
-        creator_agent = Creator()
-
-        workflow = StateGraph(BlogGeneratorState)
-        workflow.add_node("keyword_researcher", editor_agent.get_keywords)
-        workflow.add_node("title_recommender", editor_agent.get_titles)
-        workflow.add_node("human_review", human_agent.review_titles)
-        workflow.add_node("section_header_review", human_agent.review_state)
-        workflow.add_node("introduction_writer", writer_agent.write_intro)
-        workflow.add_node("planner", editor_agent.generate_section_headers)
-        workflow.add_node("section_writer", writer_agent.write_sections)
-        workflow.add_node("creator", creator_agent.add_creatives)
-
-        workflow.add_edge("keyword_researcher", "title_recommender")
-        workflow.add_edge("title_recommender", "human_review")
-        workflow.add_edge("human_review", "introduction_writer")
-        workflow.add_edge("introduction_writer", "planner")
-        workflow.add_edge("planner", "section_header_review")
-        workflow.add_edge("section_header_review", "section_writer")
-        workflow.add_conditional_edges("section_writer", check_include_images)
-        workflow.add_edge("creator", END)
-
-        workflow.set_entry_point("keyword_researcher")
-
-        return workflow
-
-    def run(self, query: str, brand_persona: BrandPersona, max_suggestions: int, max_sections: int,
-            max_images: int, include_images: bool):
-        workflow = self.init_workflow()
-
-        graph = workflow.compile()
-
-        return graph.invoke({"query": query, "brand_persona": brand_persona,
-                             "max_title_suggestions": max_suggestions,
-                             "max_sections": max_sections,
-                             "max_images": max_images, "include_images": include_images})
+from agents.BlogGeneratorAgent import BlogGeneratorAgent
+from domain import BlogGeneratorDto
 
 
 def dict_to_blog(blog_dict):
@@ -93,9 +24,37 @@ def dict_to_blog(blog_dict):
     return blog_post
 
 
-if __name__ == "__main__":
+def generate_response(resp, agent, config):
+    agent_state = agent.get_state(config)
+    next_step = agent_state.next[0] if agent_state.next else "final_draft"
+    return {"workflow_step": next_step, "state": resp}
+
+
+def run_blog_gen_workflow(session_id: str, **kwargs):
+    agent_config = {"configurable": {"thread_id": session_id}}
     agent = BlogGeneratorAgent()
 
+    result = agent.get_state(agent_config).next
+    if result:
+        next_step = result[0]
+        if next_step == 'title_review':
+            agent.update_state(config=agent_config, state={"selected_title": kwargs.get("title")}, node_name=next_step)
+            resp = agent.continue_run(config=agent_config)
+            return generate_response(resp, agent, agent_config)
+        elif next_step == 'section_header_review':
+            agent.update_state(config=agent_config, state={"sections": kwargs.get("sections")}, node_name=next_step)
+            resp = agent.continue_run(agent_config)
+            return generate_response(resp, agent, agent_config)
+
+    # First time flow
+    blog_gen_dto = kwargs.get("blog_gen_dto")
+    inputs = BlogGeneratorDto.convert_to_dict(blog_gen_dto)
+    resp = agent.run(**inputs, config=agent_config)
+
+    return generate_response(resp, agent, agent_config)
+
+
+if __name__ == "__main__":
     json_data = {
         'purpose': ['Promote and sell pet products', 'Establish an online presence for the Poochku brand',
                     'Provide information and resources for dog owners'],
@@ -108,11 +67,18 @@ if __name__ == "__main__":
                    'Use headings and subheadings to organize information'],
         'language': ['Simple', 'Easy to understand', 'Relatable to dog owners'],
     }
-    keywords = "New pet parent tips, First-time dog owner guide, Essential pet care for beginners, Puppy care basics for new owners, First-time pet supplies checklist, Training tips for new pet parents"
-    brand_persona = BrandPersona(**json_data)
-    query = "First time pet parents"
-    response = agent.run(query=query, brand_persona=brand_persona, max_suggestions=5, max_sections=5,
-                         max_images=2, include_images=False)
 
-    ## create final blog
-    print(dict_to_blog(response))
+    blog_data = BlogGeneratorDto.BlogGeneratorDto(
+        query="How to train a puppy",
+        brand_persona=json_data,
+        max_suggestions=3,
+        max_sections=5,
+        max_images=2,
+        include_images=False
+    )
+    sessionId = "1005"
+    print(run_blog_gen_workflow(session_id=sessionId, blog_gen_dto=blog_data))
+    print(run_blog_gen_workflow(session_id=sessionId, title='Puppy Training 101: Essential Tips for New Dog Owners'))
+    sections = [{'section_header': "Understanding Your Puppy's Behavior", 'description': 'Explain the basics of puppy behavior, including common traits and tendencies. Discuss the importance of patience and consistency in training. Provide insights into how puppies learn and the role of positive reinforcement.'}, {'section_header': 'Housebreaking Made Easy', 'description': 'Offer step-by-step guidance on housebreaking a puppy. Include tips on creating a schedule, recognizing signs that your puppy needs to go, and how to handle accidents. Emphasize the importance of routine and positive reinforcement.'}, {'section_header': 'Mastering Basic Commands', 'description': "Detail the process of teaching essential commands such as 'sit,' 'stay,' 'come,' and 'leave it.' Provide clear instructions and tips for effective training sessions. Highlight the benefits of these commands for safety and good behavior."}, {'section_header': 'Socialization: The Key to a Well-Adjusted Pup', 'description': 'Discuss the importance of socializing your puppy with other dogs, people, and different environments. Offer practical advice on how to safely introduce your puppy to new experiences. Explain the long-term benefits of proper socialization.'}, {'section_header': 'Dealing with Common Challenges', 'description': 'Address common training challenges such as biting, chewing, and barking. Provide solutions and strategies to manage and correct these behaviors. Include tips on how to stay calm and consistent during difficult moments.'}]
+    print(run_blog_gen_workflow(session_id=sessionId, sections=sections))
+

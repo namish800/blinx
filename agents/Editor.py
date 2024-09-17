@@ -36,9 +36,9 @@ class Editor:
         parser = JsonOutputParser()
         print("Generating Titles")
         chain = prompt_template | self.model | parser
-        response = chain.invoke({"tone": blog_generator_state.get("brand_persona").tone,
+        response = chain.invoke({"tone": blog_generator_state.get("brand_persona").get("tone"),
                                  "max_suggestions": blog_generator_state.get("max_title_suggestions"),
-                                 "audience": blog_generator_state.get("brand_persona").audience,
+                                 "audience": blog_generator_state.get("brand_persona").get("audience"),
                                  "query": blog_generator_state.get("query"),
                                  "keywords": blog_generator_state.get("keywords"),
                                  "format_example": """
@@ -87,9 +87,9 @@ class Editor:
 
         print("Generating Sections")
         chain = prompt_template | self.model | parser
-        response = chain.invoke({"tone": blog_generator_state.get("brand_persona").tone,
+        response = chain.invoke({"tone": blog_generator_state.get("brand_persona").get("tone"),
                                  "max_sections": blog_generator_state.get("max_sections"),
-                                 "audience": blog_generator_state.get("brand_persona").audience,
+                                 "audience": blog_generator_state.get("brand_persona").get("audience"),
                                  "title": blog_generator_state.get("selected_title"),
                                  "introduction": blog_generator_state.get("introduction"),
                                  "keywords": blog_generator_state.get("keywords"),

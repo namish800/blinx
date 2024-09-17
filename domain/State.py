@@ -5,7 +5,7 @@ from domain.BrandPersona import BrandPersona
 
 class BlogGeneratorState(TypedDict):
     query: str
-    brand_persona: BrandPersona
+    brand_persona: str
     max_title_suggestions: int
     generated_titles: List[str]
     selected_title: str
@@ -17,4 +17,5 @@ class BlogGeneratorState(TypedDict):
     max_images: str
     include_images: bool
     img_urls: List[str]
+
 
