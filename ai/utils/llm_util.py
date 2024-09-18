@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 _ = load_dotenv()
 
-model = ChatGoogleGenerativeAI(
+model_gemini = ChatGoogleGenerativeAI(
     model="gemini-1.5-pro",
     temperature=0,
     max_tokens=None,

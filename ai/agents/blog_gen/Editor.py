@@ -1,7 +1,7 @@
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 
-from ai.prompts.title_gen import title_generator_sys_prompt, section_header_generator_sys_prompts, \
+from ai.agents.blog_gen.prompts.title_gen import title_generator_sys_prompt, section_header_generator_sys_prompts, \
     section_header_generator_user_prompts, keyword_generator_sys_prompt
 from ai.utils.llm_util import model_openai
 

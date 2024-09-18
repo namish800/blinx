@@ -1,9 +1,9 @@
 import sqlite3
 
-from ai.agents.Creator import Creator
-from ai.agents.Editor import Editor
-from ai.agents.Human import Human
-from ai.agents.Writer import Writer
+from ai.agents.blog_gen.Creator import Creator
+from ai.agents.blog_gen.Editor import Editor
+from ai.agents.blog_gen.Human import Human
+from ai.agents.blog_gen.Writer import Writer
 from ai.domain.State import BlogGeneratorState
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.checkpoint.sqlite import SqliteSaver

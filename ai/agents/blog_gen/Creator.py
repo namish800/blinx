@@ -1,7 +1,7 @@
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 
-from ai.prompts.title_gen import add_creatives_sys_prompt, add_creatives_user_prompt
+from ai.agents.blog_gen.prompts.title_gen import add_creatives_sys_prompt, add_creatives_user_prompt
 
 from ai.utils.ImageGenerator import SocialMediaImageGenerator
 from ai.utils.llm_util import model_openai
