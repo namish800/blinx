@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from ai.domain.BlogGeneratorDto import BlogGeneratorDto
-from models.blog_post import BlogPost  # Correct import
+from backend.models.blog_post import BlogPost  # Correct import
 import uuid
 from ai.orchestrator import run_blog_gen_workflow
 
@@ -27,7 +27,7 @@ async def generate_blog(request: Request):
         'language': ['Simple', 'Easy to understand', 'Relatable to dog owners'],
     }
 
-    session_id =  uuid.uuid4()
+    session_id = uuid.uuid4()
 
     # Placeholder logic for blog post generation
     blog_data = BlogGeneratorDto(
