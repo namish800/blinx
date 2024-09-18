@@ -47,7 +47,7 @@ async def get_user(user_id: str):
 
     return user
 
-
+# TODO: user to give url only as input
 @app.post("/createBrandPersona")
 async def create_brand_persona(brand_persona: BrandPersona = Body(...)):
     # Convert BrandPersona object to a dictionary
@@ -74,7 +74,7 @@ async def generate_blog(request: Request):
     # Placeholder logic for blog post generation
     blog_data = BlogGeneratorDto(
         query=blog_post.user_prompt,
-        brand_persona=brand_persona,
+        brand_persona=brand_persona.to_dict(),
         max_suggestions=blog_post.max_suggestions,
         max_sections=blog_post.max_sections,
         max_images=blog_post.max_images,
