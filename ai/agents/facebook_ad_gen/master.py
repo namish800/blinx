@@ -12,7 +12,7 @@ from ai.agents.facebook_ad_gen.human import Human
 from ai.agents.facebook_ad_gen.planner import Planner
 
 
-class AdGeneratorAgent():
+class AdGeneratorAgent:
     def __init__(self):
         self.model = ChatGoogleGenerativeAI(
             model="gemini-1.5-pro",
@@ -46,18 +46,23 @@ class AdGeneratorAgent():
         self.graph = workflow.compile(checkpointer=self.memory,
                                       interrupt_before=["human"])
 
-    def run(self, objective, details, brand_persona, campaign_plan, feedback, config: dict):
+    def run(self, objective, details, brand_persona, config: dict):
         inputs = {
             "objective": objective,
             "product_or_service_details": details,
             "brand_persona": json.dumps(brand_persona),
-            "campaign_plan": campaign_plan,
-            "human_feedback": feedback
         }
         return self.graph.invoke(inputs, config)
 
     def continue_run(self, config: dict):
         return self.graph.invoke(None, config)
+
+    def get_state(self, cfg):
+        return self.graph.get_state(cfg)
+
+    def update_state(self, config, state, node_name):
+        self.graph.update_state(config=config, values=state, as_node=node_name)
+        pass
 
 
 if __name__ == "__main__":
@@ -80,8 +85,7 @@ if __name__ == "__main__":
     agent_config = {"configurable": {"thread_id": 1010}}
     resp = agent.run(objective="Product promotion for my online pet shop",
                      details="Dog poop scooper",
-                     brand_persona=json.dumps(json_data), config=agent_config,
-                     campaign_plan=None, feedback=None)
+                     brand_persona=json.dumps(json_data), config=agent_config)
 
     print(json.dumps(resp))
 

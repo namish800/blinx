@@ -14,7 +14,6 @@ class SocialMediaImageGenerator:
         """
         self.client = OpenAI()
 
-
     def generate_image(self, prompt):
         """
         Generate a square image using DALL·E based on the provided prompt.
@@ -80,8 +79,7 @@ class SocialMediaImageGenerator:
         """
         Generate an image optimized for a Facebook ad post.
         """
-        # Facebook ad image size: 1200x628 pixels (approx 1.91:1 aspect ratio)
-        target_size = (1200, 628)
+        target_size = (1080, 1920)
         image_url = self.generate_image(prompt)
         img = self.download_image(image_url)
         img = self.resize_and_crop(img, target_size)
