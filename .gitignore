@@ -6,5 +6,6 @@
 checkpoints.sqlite
 checkpoints.sqlite-shm
 checkpoints.sqlite-wal
+*.sqlite*
 
 __pycache__
