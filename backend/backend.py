@@ -5,10 +5,12 @@ from fastapi import FastAPI, Request, Body, HTTPException
 from fastapi.responses import JSONResponse
 from firebase_admin import firestore, credentials
 
+from ai.brand_persona_orchestrator import BrandPersonaOrchestrator
 from ai.domain.BlogGeneratorDto import BlogGeneratorDto
 from ai.orchestrator import run_blog_gen_workflow
-from backend.models.blog_post import BlogPost  # Correct import
+from backend.models.blog_post import BlogPost
 from backend.models.brand_persona import BrandPersona
+from backend.models.brand_persona_request import BrandPersonaRequest
 from backend.models.user import User
 
 app = FastAPI()
@@ -29,9 +31,12 @@ async def create_user(user: User):
     Creates a new user document in the 'users' collection.
     Firestore will automatically generate a unique ID for each user.
     """
-    doc_ref = client.collection("users").document()
-    user.id = doc_ref.id  # Get the generated ID
-    doc_ref.set(user.dict())
+    # Generate a unique user ID
+    user_id = str(uuid.uuid4())  # Use UUID for uniqueness
+
+    # Create user in Firestore (using user_id as document ID)
+    user.user_id = user_id  # Get the generated ID
+    user_ref = client.collection('users').document(user_id).set(user.dict())
 
     return {"message": "User created successfully", "user": user}
 
@@ -47,15 +52,37 @@ async def get_user(user_id: str):
 
     return user
 
-# TODO: user to give url only as input
-@app.post("/createBrandPersona")
-async def create_brand_persona(brand_persona: BrandPersona = Body(...)):
-    # Convert BrandPersona object to a dictionary
-    brand_persona_data = brand_persona.dict()
 
-    # Add the data to the 'brand-persona' collection
-    doc_ref = client.collection("brand-persona").document()
-    doc_ref.set(brand_persona_data)
+@app.post("/createBrandPersona")
+async def create_brand_persona(brand_persona_request: BrandPersonaRequest = Body(...)):
+    # Check if user exists in Firestore
+    user_ref = client.collection('users').document(brand_persona_request.user_id)
+    user_doc = user_ref.get()
+
+    if not user_doc.exists:
+        raise HTTPException(status_code=401, detail="No user found.")
+
+    # 2. Generate Brand Persona
+    brand_persona_orchestrator = BrandPersonaOrchestrator()
+    created_brand_persona = brand_persona_orchestrator.generate_brand_persona(brand_persona_request.brand_url)
+
+    # 3. Map to BrandPersona Class
+    brand_persona = BrandPersona(
+        purpose=created_brand_persona['purpose'],
+        audience=created_brand_persona['audience'],
+        tone=created_brand_persona['tone'],
+        emotions=created_brand_persona['emotions'],
+        character=created_brand_persona['character'],
+        syntax=created_brand_persona['syntax'],
+        language=created_brand_persona['language'],
+        name='Generated Brand Persona',  # Assuming a default name
+        user_id=brand_persona_request.user_id
+    )
+
+    # Add data to Firestore
+    doc_ref = client.collection('brand-persona').document(brand_persona.user_id)
+    doc_ref.set(brand_persona.dict())
+
     return {"message": "Brand persona created successfully"}
 
 
