@@ -1,9 +1,9 @@
 from pydantic import BaseModel
 
 class BlogPost(BaseModel):
-    userId: int
-    userPrompt: str
-    maxSuggestions: int
-    maxSections: int
-    maxImages: int
-    includeImages: bool
+    user_id: str
+    user_prompt: str
+    max_suggestions: int
+    max_sections: int
+    max_images: int
+    include_images: bool
