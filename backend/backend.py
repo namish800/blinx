@@ -1,14 +1,14 @@
 import uuid
 
 import firebase_admin
-from fastapi import FastAPI, Request, Body, HTTPException
+from fastapi import FastAPI, Body, HTTPException
 from fastapi.responses import JSONResponse
 from firebase_admin import firestore, credentials
 
 from ai.brand_persona_orchestrator import BrandPersonaOrchestrator
 from ai.domain.BlogGeneratorDto import BlogGeneratorDto
 from ai.orchestrator import run_blog_gen_workflow
-from backend.domain.blog_post import BlogPost
+from backend.domain.blog_post_request import BlogPostRequest
 from backend.domain.brand_persona import BrandPersona
 from backend.domain.brand_persona_request import BrandPersonaRequest
 from backend.domain.user import User
@@ -75,7 +75,7 @@ async def create_brand_persona(brand_persona_request: BrandPersonaRequest = Body
         character=created_brand_persona['character'],
         syntax=created_brand_persona['syntax'],
         language=created_brand_persona['language'],
-        name='Generated Brand Persona',  # Assuming a default name
+        name=created_brand_persona['name'],  # Assuming a default name
         user_id=brand_persona_request.user_id
     )
 
@@ -87,11 +87,8 @@ async def create_brand_persona(brand_persona_request: BrandPersonaRequest = Body
 
 
 @app.post("/generateBlog")
-async def generate_blog(request: Request):
-    data = await request.json()
-    blog_post = BlogPost(**data)  # Instantiate the class
-
-    docs = client.collection("brand-persona").where("user_id", "==", blog_post.user_id).stream()
+async def generate_blog(blog_post_request: BlogPostRequest = Body(...)):
+    docs = client.collection("brand-persona").where("user_id", "==", blog_post_request.user_id).stream()
     brand_persona = next(docs, None)
     if brand_persona is None:
         raise HTTPException(status_code=404, detail="No brand persona found for this user.")
@@ -100,12 +97,12 @@ async def generate_blog(request: Request):
 
     # Placeholder logic for blog post generation
     blog_data = BlogGeneratorDto(
-        query=blog_post.user_prompt,
+        query=blog_post_request.user_prompt,
         brand_persona=brand_persona.to_dict(),
-        max_suggestions=blog_post.max_suggestions,
-        max_sections=blog_post.max_sections,
-        max_images=blog_post.max_images,
-        include_images=blog_post.include_images
+        max_suggestions=blog_post_request.max_suggestions,
+        max_sections=blog_post_request.max_sections,
+        max_images=blog_post_request.max_images,
+        include_images=blog_post_request.include_images
     )
     # You would replace this with your actual logic
     # look for a session in firebase, if not found, create a new session
