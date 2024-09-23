@@ -1,10 +1,12 @@
 import json
+from typing import List
 
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 
 from ai.agents.facebook_ad_gen.domain.state import AdGeneratorState
 from ai.agents.facebook_ad_gen.prompts.content_creator_prompts import ad_creator_system_prompt, ad_creator_user_prompt
+from ai.utils.ImageGenerator import SocialMediaImageGenerator
 
 from ai.utils.llm_util import model_openai
 
@@ -12,6 +14,7 @@ from ai.utils.llm_util import model_openai
 class Creator:
     def __init__(self):
         self.model = model_openai
+        self.img_gen = SocialMediaImageGenerator()
 
     def generate_ad_copies(self, ad_gen_state: AdGeneratorState):
         prompt_template = ChatPromptTemplate.from_messages(
@@ -41,7 +44,8 @@ class Creator:
                             {
                             "ad_copies": [{
                                 "framework": "",
-                                "image_suggestion": "",
+                                "background_image_prompt": "",
+                                "suggestions": ["idea1", "idea"2]
                                 "content": {
                                     "primary_text": "",
                                     "headline": "",
@@ -53,3 +57,13 @@ class Creator:
                         ```
                                   """})
         return {'ad_copies': response['ad_copies']}
+
+    def generate_ad_images(self, ad_gen_state: AdGeneratorState):
+        ad_copies = ad_gen_state.get("ad_copies", [])
+        update_ad_copies = []
+        for ad_copy in ad_copies:
+            ad_copy["background_image_url"] = self.img_gen.generate_facebook_ad_post(ad_copy.get("background_image_prompt"))
+            update_ad_copies.append(ad_copy)
+        return {'ad_copies': update_ad_copies}
+
+

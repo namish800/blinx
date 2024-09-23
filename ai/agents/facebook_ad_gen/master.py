@@ -33,13 +33,15 @@ class AdGeneratorAgent:
         workflow.add_node("planner", planner_agent.generate_campaign_plan)
         workflow.add_node("human", human_agent.review)
         workflow.add_node("creator", creator_agent.generate_ad_copies)
+        workflow.add_node("image_generator", creator_agent.generate_ad_images)
 
         workflow.add_edge("planner", "human")
         workflow.add_conditional_edges("human",
                                        (lambda review: "continue" if review.get('human_feedback',
                                                                                 None) is None else "revise"),
                                        {"continue": "creator", "revise": "planner"})
-        workflow.add_edge("creator", END)
+        workflow.add_edge("creator", "image_generator")
+        workflow.add_edge("image_generator", END)
 
         workflow.set_entry_point("planner")
 
@@ -50,7 +52,7 @@ class AdGeneratorAgent:
         inputs = {
             "objective": objective,
             "product_or_service_details": details,
-            "brand_persona": json.dumps(brand_persona),
+            "brand_persona": brand_persona,
         }
         return self.graph.invoke(inputs, config)
 

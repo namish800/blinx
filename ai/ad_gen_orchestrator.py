@@ -51,7 +51,7 @@ if __name__ == "__main__":
     ad_data = AdGenDto(objective="Product promotion for my online pet shop",
                        details="Dog poop scooper",
                        brand_persona=brand_persona)
-    session_id = "2001"
+    session_id = "2010"
     orchestrator = AdGenOrchestrator()
     # First time
     resp1 = orchestrator.run_ad_gen_workflow(session_id=session_id, ad_gen_dto=ad_data)
