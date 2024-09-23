@@ -8,10 +8,10 @@ from firebase_admin import firestore, credentials
 from ai.brand_persona_orchestrator import BrandPersonaOrchestrator
 from ai.domain.BlogGeneratorDto import BlogGeneratorDto
 from ai.orchestrator import run_blog_gen_workflow
-from backend.models.blog_post import BlogPost
-from backend.models.brand_persona import BrandPersona
-from backend.models.brand_persona_request import BrandPersonaRequest
-from backend.models.user import User
+from backend.domain.blog_post import BlogPost
+from backend.domain.brand_persona import BrandPersona
+from backend.domain.brand_persona_request import BrandPersonaRequest
+from backend.domain.user import User
 
 app = FastAPI()
 
