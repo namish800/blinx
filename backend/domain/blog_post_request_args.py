@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-class BlogPostRequest(BaseModel):
+class BlogPostRequestArgs(BaseModel):
     user_id: str
     user_prompt: str
     max_suggestions: int

@@ -14,7 +14,7 @@ class SocialMediaImageGenerator:
         """
         self.client = OpenAI()
 
-    def generate_image(self, prompt, size):
+    def generate_image(self, prompt, size=None):
         """
         Generate a square image using DALL·E based on the provided prompt.
         """
