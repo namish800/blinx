@@ -9,6 +9,8 @@ These are the fields you need to generate:
 2. Headline: Should be of max 255 characters
 3. Description: The description will show in your ad if it's likely to resonate with the person seeing it. It will only appear in some placements, and its position will vary.
 4. Call To Action: clear call to action as per Facebook's guidelines 
+5. Background Image Prompt: Generate a detailed prompt for a text to image generation model. Keep in mind to follow the brand persona while generating background image prompt.
+6. Suggestions to the Image editor: Give ideas to the Human editor on how to use the background image to create the final post.
 """
 
 ad_creator_user_prompt = """
@@ -58,7 +60,6 @@ Please create separate ad copies using the following copyrighting frameworks:
 - Present each ad copy clearly, indicating which framework it corresponds to.
 - Maintain a casual, conversational, and relatable tone throughout.
 - Use contractions and provide examples where appropriate.
-- for each ad generate a description/prompt for a single image. Brand will use this as a reference.
 
 
 ---

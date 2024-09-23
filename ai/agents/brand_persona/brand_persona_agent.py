@@ -23,6 +23,7 @@ class BrandPersonaAI:
             HumanMessage(user_prompt)
             ]
         )
+        # font family, primary, sec, ter colors,  sizing
         self.parser = JsonOutputParser()
 
         self.chain = self.prompt_template | self.model | self.parser
