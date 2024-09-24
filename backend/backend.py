@@ -34,7 +34,7 @@ cred = credentials.Certificate(firestore_credentials)
 firebase_admin.initialize_app(cred)
 
 # Now create the Firestore client
-client = firestore.Client()
+client = firestore.client()
 
 
 @app.post("/createUser")
