@@ -1,4 +1,5 @@
 import json
+import os
 import uuid
 
 import firebase_admin
@@ -24,8 +25,10 @@ from backend.domain.user import User
 
 app = FastAPI()
 
+firestore_credentials_string = os.environ["FIRESTORE_CREDENTIALS"]
 # Path to your JSON key file (make sure it's the absolute path)
-cred = credentials.Certificate("blinx-63185-firebase-adminsdk-qv7yr-737cbb7829.json")
+firestore_credentials = json.loads(firestore_credentials_string)
+cred = credentials.Certificate(firestore_credentials)
 
 # Initialize Firebase Admin SDK *first*
 firebase_admin.initialize_app(cred)
