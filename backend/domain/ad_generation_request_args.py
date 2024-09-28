@@ -14,4 +14,5 @@ class AdGenerationRequestArgs(BaseModel):
 class InstagramPostRequestArgs(BaseModel):
     user_id: str
     objective: str
-    session_id: str
+    max_posts: int
+    include_images: bool

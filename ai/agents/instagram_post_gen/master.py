@@ -33,11 +33,12 @@ class InstagramPostGenAgent:
 
         self.graph = workflow.compile(checkpointer=self.memory)
 
-    def run(self, objective, max_posts, brand_persona, config: dict):
+    def run(self, objective, max_posts, brand_persona, include_images, config: dict):
         inputs = {
             "objective": objective,
             "brand_persona": brand_persona,
             "max_posts": max_posts,
+            "include_images": include_images
         }
         return self.graph.invoke(inputs, config)
 

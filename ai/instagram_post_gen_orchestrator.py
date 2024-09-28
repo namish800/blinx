@@ -16,7 +16,7 @@ class InstagramPostGenOrchestrator:
         agent_config = {"configurable": {"thread_id": session_id}}
 
         # First time flow
-        post_gen_dto = kwargs.get("post_gen_dto")
+        post_gen_dto = kwargs.get("instagram_post_dto")
         inputs = convert_to_dict(post_gen_dto)
         resp = self.agent.run(**inputs, config=agent_config)
 
@@ -38,7 +38,7 @@ if __name__ == "__main__":
         'language': ['Simple', 'Easy to understand', 'Relatable to dog owners'],
     }
     post_data = PostGenDto(objective="Product promotion for my online pet shop. Product name is Poochku's Poop scooper",
-                           brand_persona=brand_persona, max_posts=3)
-    session_id = "3002"
-    resp = orchestrator.run_instagram_post_gen_workflow(session_id=session_id, post_gen_dto=post_data)
+                           brand_persona=brand_persona, max_posts=3, include_images=True)
+    session_id = "3003"
+    resp = orchestrator.run_instagram_post_gen_workflow(session_id=session_id, instagram_post_dto=post_data)
     print(json.dumps(resp))

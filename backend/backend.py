@@ -174,10 +174,14 @@ async def generate_instagram_post(instagram_post_request_args: InstagramPostRequ
     orchestrator = InstagramPostGenOrchestrator()
     brand_persona = get_brand_persona(instagram_post_request_args.user_id)
     instagram_post_data = PostGenDto(objective=instagram_post_request_args.objective,
-                                            brand_persona=brand_persona.to_dict())
-    return_item = orchestrator.run_instagram_post_gen_workflow(session_id=session_id, instagram_post_dto=instagram_post_data)
+                                     brand_persona=brand_persona.to_dict(),
+                                     max_posts=instagram_post_request_args.max_posts,
+                                     include_images=instagram_post_request_args.include_images)
+    return_item = orchestrator.run_instagram_post_gen_workflow(session_id=session_id,
+                                                               instagram_post_dto=instagram_post_data)
     save_session(Operations.INSTAGRAM_POST_GENERATION, instagram_post_request_args.user_id, session_id)
     return JSONResponse({"session_id": session_id, "step_output": return_item})
+
 
 @app.get("/hello")
 async def root():
