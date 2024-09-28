@@ -9,10 +9,12 @@ from firebase_admin import firestore, credentials
 
 from ai.ad_gen_orchestrator import AdGenOrchestrator
 from ai.agents.facebook_ad_gen.domain.ad_gen_dto import AdGenDto
+from ai.agents.instagram_post_gen.domain.post_gen_dto import PostGenDto
 from ai.brand_persona_orchestrator import BrandPersonaOrchestrator
 from ai.domain.BlogGeneratorDto import BlogGeneratorDto
+from ai.instagram_post_gen_orchestrator import InstagramPostGenOrchestrator
 from ai.orchestrator import run_blog_gen_workflow
-from backend.domain.ad_generation_request_args import AdGenerationRequestArgs
+from backend.domain.ad_generation_request_args import AdGenerationRequestArgs, InstagramPostRequestArgs
 from backend.domain.blog_post_continue_steps_request_args import BlogPostContinueStepsRequestArgs
 from backend.domain.blog_post_request_args import BlogPostRequestArgs
 from backend.domain.brand_persona import BrandPersona
@@ -165,6 +167,17 @@ async def generate_ad(ad_gen_request_args: AdGenerationRequestArgs = Body(...)):
 
     return JSONResponse({"session_id": session_id, "step_output": return_item})
 
+
+@app.post("/generateInstagramPost")
+async def generate_instagram_post(instagram_post_request_args: InstagramPostRequestArgs = Body(...)):
+    session_id = uuid.uuid4().__str__()
+    orchestrator = InstagramPostGenOrchestrator()
+    brand_persona = get_brand_persona(instagram_post_request_args.user_id)
+    instagram_post_data = PostGenDto(objective=instagram_post_request_args.objective,
+                                            brand_persona=brand_persona.to_dict())
+    return_item = orchestrator.run_instagram_post_gen_workflow(session_id=session_id, instagram_post_dto=instagram_post_data)
+    save_session(Operations.INSTAGRAM_POST_GENERATION, instagram_post_request_args.user_id, session_id)
+    return JSONResponse({"session_id": session_id, "step_output": return_item})
 
 @app.get("/hello")
 async def root():

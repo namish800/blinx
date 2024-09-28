@@ -10,3 +10,8 @@ class AdGenerationRequestArgs(BaseModel):
     human_feedback: str
     ad_gen_step: AdGenerationSteps
     session_id: str
+
+class InstagramPostRequestArgs(BaseModel):
+    user_id: str
+    objective: str
+    session_id: str
