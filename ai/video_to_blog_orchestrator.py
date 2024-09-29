@@ -17,7 +17,9 @@ class VideoToBlogOrchestrator:
     
 
 if __name__ == "__main__":
+    from dotenv import load_dotenv
+    _ = load_dotenv()
     orchestrator = VideoToBlogOrchestrator()
 
     resp = orchestrator.run("D:\\work\\AI\\marketingAI\\BlogGenerator\\testVideo.mp4", "112")
-    print(resp['blog_post'])
+    print(resp)
