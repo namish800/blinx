@@ -3,7 +3,9 @@ import os
 import uuid
 
 import firebase_admin
+import requests
 from fastapi import FastAPI, Body, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from firebase_admin import firestore, credentials
 
@@ -14,6 +16,7 @@ from ai.brand_persona_orchestrator import BrandPersonaOrchestrator
 from ai.domain.BlogGeneratorDto import BlogGeneratorDto
 from ai.instagram_post_gen_orchestrator import InstagramPostGenOrchestrator
 from ai.orchestrator import run_blog_gen_workflow
+from ai.video_to_blog_orchestrator import VideoToBlogOrchestrator
 from backend.domain.ad_generation_request_args import AdGenerationRequestArgs, InstagramPostRequestArgs
 from backend.domain.blog_post_continue_steps_request_args import BlogPostContinueStepsRequestArgs
 from backend.domain.blog_post_request_args import BlogPostRequestArgs
@@ -24,8 +27,6 @@ from backend.domain.enums.blog_generation_steps import BlogGenerationSteps
 from backend.domain.enums.operations import Operations
 from backend.domain.session_context import SessionContext
 from backend.domain.user import User
-from fastapi.middleware.cors import CORSMiddleware
-
 
 app = FastAPI()
 
@@ -191,6 +192,55 @@ async def generate_instagram_post(instagram_post_request_args: InstagramPostRequ
                                                                instagram_post_dto=instagram_post_data)
     save_session(Operations.INSTAGRAM_POST_GENERATION, instagram_post_request_args.user_id, session_id)
     return JSONResponse({"session_id": session_id, "step_output": return_item})
+
+
+def process_video(video_path, session_id):
+    """
+    This function will contain your video processing logic.
+    Replace this with your actual implementation.
+    """
+    # Your video processing code here
+    orchestrator = VideoToBlogOrchestrator()
+    resp = orchestrator.run(video_path, session_id)
+
+    return resp
+
+
+@app.post("/analyseVideo")
+async def analyse_video(video_url: str):
+    session_id = uuid.uuid4().__str__()
+    try:
+        # 1. Download video from URL
+        response = requests.get(video_url, stream=True)
+        response.raise_for_status()  # Raise HTTPError for bad responses (4xx or 5xx)
+
+        # Create 'temp' directory if it doesn't exist
+        if not os.path.exists("videos"):
+            os.makedirs("videos")
+
+        # Generate unique filename to avoid conflicts
+        unique_filename = session_id + ".mp4"
+        video_path = os.path.join("videos", unique_filename)  # Assuming 'temp' directory exists
+
+        print("Video Path : " + video_path)
+
+        with open(video_path, 'wb') as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                f.write(chunk)
+
+        # 2. Process the video
+        analysis_result = process_video(video_path, session_id)
+
+        # 3. Delete the video from file system
+        os.remove(video_path)
+
+        # 4. Return the analysis
+        return JSONResponse(content=analysis_result)
+
+    except requests.exceptions.RequestException as e:
+        raise HTTPException(status_code=500, detail=f"Error downloading video: {e}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error processing video: {e}")
 
 
 @app.get("/hello")
