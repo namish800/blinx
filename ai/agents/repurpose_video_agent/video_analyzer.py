@@ -1,7 +1,5 @@
 import time
 import google.generativeai as genai
-import asyncio
-from tenacity import retry, stop_after_attempt, wait_exponential
 
 from ai.agents.repurpose_video_agent.domain.state import VideoAnalyzerState
 from ai.agents.repurpose_video_agent.prompts import prompts
