@@ -3,14 +3,13 @@ import cv2
 import os
 import requests
 
-# Imgur Client ID
-IMGUR_CLIENT_ID = '38404db6990c1c4'
 
 # Function to upload image to Imgur
 def upload_image_to_imgur(image_path):
-    headers = {"Authorization": f"Client-ID {IMGUR_CLIENT_ID}"}
+    client_id = os.getenv('IMGUR_CLIENT_ID')
+    headers = {"Authorization": f"Client-ID {client_id}"}
     url = "https://api.imgur.com/3/image"
-    
+
     with open(image_path, 'rb') as img:
         response = requests.post(url, headers=headers, files={'image': img})
 
@@ -21,10 +20,12 @@ def upload_image_to_imgur(image_path):
     else:
         raise Exception(f"Failed to upload image to Imgur: {response.status_code}, {response.text}")
 
+
 # Function to convert MM:SS format to seconds
 def time_to_seconds(timestamp):
     minutes, seconds = map(int, timestamp.split(':'))
     return minutes * 60 + seconds
+
 
 # Function to capture frame at a specific timestamp
 def capture_frame_at_timestamp(video_path, timestamp, output_dir="frames"):
@@ -57,7 +58,7 @@ def capture_frame_at_timestamp(video_path, timestamp, output_dir="frames"):
     if success:
         frame_filename = f'frame_at_{timestamp.replace(":", "_")}.png'
         frame_path = os.path.join(output_dir, frame_filename)
-        
+
         # Save the frame as an image file
         cv2.imwrite(frame_path, frame)
 
@@ -69,6 +70,7 @@ def capture_frame_at_timestamp(video_path, timestamp, output_dir="frames"):
     else:
         video.release()
         raise ValueError(f"Could not retrieve frame at {timestamp}")
+
 
 # Function to replace image timestamps in markdown text with URLs to the frames
 def replace_image_placeholders(markdown_text, video_path, image_base_url="http://example.com/frames/"):
