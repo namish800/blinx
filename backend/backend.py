@@ -24,8 +24,18 @@ from backend.domain.enums.blog_generation_steps import BlogGenerationSteps
 from backend.domain.enums.operations import Operations
 from backend.domain.session_context import SessionContext
 from backend.domain.user import User
+from fastapi.middleware.cors import CORSMiddleware
+
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
+)
 
 firestore_credentials_string = os.environ["FIRESTORE_CREDENTIALS"]
 # Path to your JSON key file (make sure it's the absolute path)
