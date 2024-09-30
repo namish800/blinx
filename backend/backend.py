@@ -4,7 +4,7 @@ import uuid
 
 import firebase_admin
 import requests
-from fastapi import FastAPI, Body, HTTPException
+from fastapi import FastAPI, Body, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from firebase_admin import firestore, credentials
@@ -194,6 +194,27 @@ async def generate_instagram_post(instagram_post_request_args: InstagramPostRequ
     return JSONResponse({"session_id": session_id, "step_output": return_item})
 
 
+tasks_status = {}
+
+
+def process_video_background(video_path: str, session_id: str):
+    try:
+        # Process the video (placeholder for your actual processing code)
+        analysis_result = process_video(video_path, session_id)
+
+        # Update the status to "completed" and store the result
+        tasks_status[session_id]['status'] = 'completed'
+        tasks_status[session_id]['result'] = analysis_result
+
+        # Remove the video after processing
+        os.remove(video_path)
+
+    except Exception as e:
+        # Handle any errors and update the status
+        tasks_status[session_id]['status'] = 'failed'
+        tasks_status[session_id]['error'] = str(e)
+
+
 def process_video(video_path, session_id):
     """
     This function will contain your video processing logic.
@@ -207,40 +228,47 @@ def process_video(video_path, session_id):
 
 
 @app.post("/analyseVideo")
-async def analyse_video(video_url: str):
+def analyse_video(video_url: str, background_tasks: BackgroundTasks):
     session_id = uuid.uuid4().__str__()
+    tasks_status[session_id] = {"status": "processing", "result": None}
     try:
-        # 1. Download video from URL
-        response = requests.get(video_url, stream=True)
-        response.raise_for_status()  # Raise HTTPError for bad responses (4xx or 5xx)
-
-        # Create 'temp' directory if it doesn't exist
-        if not os.path.exists("videos"):
-            os.makedirs("videos")
-
-        # Generate unique filename to avoid conflicts
-        unique_filename = session_id + ".mp4"
-        video_path = os.path.join("videos", unique_filename)  # Assuming 'temp' directory exists
-
+        # # 1. Download video from URL
+        # response = requests.get(video_url, stream=True)
+        # response.raise_for_status()  # Raise HTTPError for bad responses (4xx or 5xx)
+        #
+        # # Create 'temp' directory if it doesn't exist
+        # if not os.path.exists("videos"):
+        #     os.makedirs("videos")
+        #
+        # # Generate unique filename to avoid conflicts
+        # unique_filename = session_id + ".mp4"
+        # video_path = os.path.join("videos", unique_filename)  # Assuming 'temp' directory exists
+        video_path = "D:\\work\\AI\\marketingAI\\BlogGenerator\\testVideo.mp4"
         print("Video Path : " + video_path)
 
-        with open(video_path, 'wb') as f:
-            for chunk in response.iter_content(chunk_size=8192):
-                f.write(chunk)
+        # with open(video_path, 'wb') as f:
+        #     for chunk in response.iter_content(chunk_size=8192):
+        #         f.write(chunk)
 
-        # 2. Process the video
-        analysis_result = process_video(video_path, session_id)
-
-        # 3. Delete the video from file system
-        os.remove(video_path)
+        # Add the video processing task to the background
+        background_tasks.add_task(process_video_background, video_path, session_id)
 
         # 4. Return the analysis
-        return JSONResponse(content=analysis_result)
+        return JSONResponse(content={"session_id": session_id, "status": "processing"})
 
     except requests.exceptions.RequestException as e:
         raise HTTPException(status_code=500, detail=f"Error downloading video: {e}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing video: {e}")
+
+
+@app.get("/taskStatus/{session_id}")
+def check_task_status(session_id: str):
+    if session_id not in tasks_status:
+        return JSONResponse(status_code=404, content={"error": "Task not found"})
+
+    status_info = tasks_status[session_id]
+    return JSONResponse(content=status_info)
 
 
 @app.get("/hello")
@@ -274,9 +302,3 @@ def validate_session(session_id: str, operation: Operations):
     if session_context is None:
         raise HTTPException(status_code=404, detail="No active session.")
     # TODO: add validation on operation as well
-
-
-if __name__ == "__main__":
-    import uvicorn
-
-    uvicorn.run(app, host="localhost", port=8080)
