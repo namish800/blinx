@@ -14,4 +14,4 @@ Requests==2.32.3
 uvicorn==0.31.0
 langgraph-checkpoint-sqlite
 google-cloud-datastore
-numpy
+numpy==1.26.4
