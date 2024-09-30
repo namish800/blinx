@@ -27,6 +27,7 @@ from backend.domain.enums.blog_generation_steps import BlogGenerationSteps
 from backend.domain.enums.operations import Operations
 from backend.domain.session_context import SessionContext
 from backend.domain.user import User
+from pytubefix import YouTube
 
 app = FastAPI()
 
@@ -227,33 +228,29 @@ def process_video(video_path, session_id):
     return resp
 
 
+def download_video(url):
+    yt = YouTube(url)
+    print(yt.title)
+
+    if not os.path.exists("temp/videos"):
+        os.makedirs("temp/videos")
+
+    ys = yt.streams.get_highest_resolution()
+    path = ys.download('temp/videos')
+    return path
+
+
 @app.post("/analyseVideo")
 def analyse_video(video_url: str, background_tasks: BackgroundTasks):
     session_id = uuid.uuid4().__str__()
     tasks_status[session_id] = {"status": "processing", "result": None}
     try:
-        # # 1. Download video from URL
-        # response = requests.get(video_url, stream=True)
-        # response.raise_for_status()  # Raise HTTPError for bad responses (4xx or 5xx)
-        #
-        # # Create 'temp' directory if it doesn't exist
-        # if not os.path.exists("videos"):
-        #     os.makedirs("videos")
-        #
-        # # Generate unique filename to avoid conflicts
-        # unique_filename = session_id + ".mp4"
-        # video_path = os.path.join("videos", unique_filename)  # Assuming 'temp' directory exists
-        video_path = "D:\\work\\AI\\marketingAI\\BlogGenerator\\testVideo.mp4"
+        video_path = download_video(video_url)
         print("Video Path : " + video_path)
-
-        # with open(video_path, 'wb') as f:
-        #     for chunk in response.iter_content(chunk_size=8192):
-        #         f.write(chunk)
 
         # Add the video processing task to the background
         background_tasks.add_task(process_video_background, video_path, session_id)
 
-        # 4. Return the analysis
         return JSONResponse(content={"session_id": session_id, "status": "processing"})
 
     except requests.exceptions.RequestException as e:
