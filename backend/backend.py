@@ -272,7 +272,7 @@ def check_task_status(session_id: str):
 
 
 @app.get("/getBrandPersona")
-def get_brand_personaa(user_id: str):
+def get_brand_persona(user_id: str):
     return get_brand_persona_from_firestore(user_id)
 
 
