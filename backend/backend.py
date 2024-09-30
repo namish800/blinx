@@ -3,9 +3,12 @@ import os
 import uuid
 
 import firebase_admin
-from fastapi import FastAPI, Body, HTTPException
+import requests
+from fastapi import FastAPI, Body, HTTPException, BackgroundTasks
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from firebase_admin import firestore, credentials
+from pytubefix import YouTube
 
 from ai.ad_gen_orchestrator import AdGenOrchestrator
 from ai.agents.facebook_ad_gen.domain.ad_gen_dto import AdGenDto
@@ -14,6 +17,7 @@ from ai.brand_persona_orchestrator import BrandPersonaOrchestrator
 from ai.domain.BlogGeneratorDto import BlogGeneratorDto
 from ai.instagram_post_gen_orchestrator import InstagramPostGenOrchestrator
 from ai.orchestrator import run_blog_gen_workflow
+from ai.video_to_blog_orchestrator import VideoToBlogOrchestrator
 from backend.domain.ad_generation_request_args import AdGenerationRequestArgs, InstagramPostRequestArgs
 from backend.domain.blog_post_continue_steps_request_args import BlogPostContinueStepsRequestArgs
 from backend.domain.blog_post_request_args import BlogPostRequestArgs
@@ -24,8 +28,6 @@ from backend.domain.enums.blog_generation_steps import BlogGenerationSteps
 from backend.domain.enums.operations import Operations
 from backend.domain.session_context import SessionContext
 from backend.domain.user import User
-from fastapi.middleware.cors import CORSMiddleware
-
 
 app = FastAPI()
 
@@ -67,12 +69,13 @@ async def create_user(user: User):
 
 @app.get("/users/{user_id}")
 async def get_user(user_id: str):
-    doc_ref = client.collection("users").document(user_id)
-    user_data = doc_ref.get().to_dict()
+    user_ref = client.collection('users').document(user_id)
+    user_doc = user_ref.get()
 
-    print(user_data)
+    if not user_doc.exists:
+        raise HTTPException(status_code=404, detail="No user found.")
     # Create a User object from the retrieved data
-    user = User(**user_data)  # Initialize a User object using the data
+    user = User(**user_doc.to_dict())  # Initialize a User object using the data
 
     return user
 
@@ -112,7 +115,7 @@ async def create_brand_persona(brand_persona_request: BrandPersonaRequestArgs = 
 
 @app.post("/generateBlog")
 async def generate_blog(blog_post_request_args: BlogPostRequestArgs = Body(...)):
-    brand_persona = get_brand_persona(blog_post_request_args.user_id)
+    brand_persona = get_brand_persona_from_firestore(blog_post_request_args.user_id)
     session_id = uuid.uuid4().__str__()
 
     # Placeholder logic for blog post generation
@@ -153,7 +156,7 @@ async def resume_blog_generation(blog_post_continue_request_args: BlogPostContin
 @app.post("/generateAd")
 async def generate_ad(ad_gen_request_args: AdGenerationRequestArgs = Body(...)):
     session_id = None
-    brand_persona = get_brand_persona(ad_gen_request_args.user_id)
+    brand_persona = get_brand_persona_from_firestore(ad_gen_request_args.user_id)
     return_item = None
     orchestrator = AdGenOrchestrator()
     if ad_gen_request_args.ad_gen_step == AdGenerationSteps.REQUEST:
@@ -182,7 +185,7 @@ async def generate_ad(ad_gen_request_args: AdGenerationRequestArgs = Body(...)):
 async def generate_instagram_post(instagram_post_request_args: InstagramPostRequestArgs = Body(...)):
     session_id = uuid.uuid4().__str__()
     orchestrator = InstagramPostGenOrchestrator()
-    brand_persona = get_brand_persona(instagram_post_request_args.user_id)
+    brand_persona = get_brand_persona_from_firestore(instagram_post_request_args.user_id)
     instagram_post_data = PostGenDto(objective=instagram_post_request_args.objective,
                                      brand_persona=brand_persona.to_dict(),
                                      max_posts=instagram_post_request_args.max_posts,
@@ -193,12 +196,92 @@ async def generate_instagram_post(instagram_post_request_args: InstagramPostRequ
     return JSONResponse({"session_id": session_id, "step_output": return_item})
 
 
+tasks_status = {}
+
+
+def process_video_background(video_path: str, session_id: str):
+    try:
+        # Process the video (placeholder for your actual processing code)
+        analysis_result = process_video(video_path, session_id)
+
+        # Update the status to "completed" and store the result
+        video_ref = client.collection('video-processor-status').document(session_id).set(
+            {"session_id": session_id, "status": "completed", "result": analysis_result})
+
+        # Remove the video after processing
+        os.remove(video_path)
+
+    except Exception as e:
+        # Handle any errors and update the status
+        video_ref = client.collection('video-processor-status').document(session_id).set(
+            {"session_id": session_id, "status": "failed", "error": str(e)})
+
+
+def process_video(video_path, session_id):
+    """
+    This function will contain your video processing logic.
+    Replace this with your actual implementation.
+    """
+    # Your video processing code here
+    orchestrator = VideoToBlogOrchestrator()
+    resp = orchestrator.run(video_path, session_id)
+
+    return resp
+
+
+def download_video(url):
+    yt = YouTube(url)
+    print(yt.title)
+
+    if not os.path.exists("temp/videos"):
+        os.makedirs("temp/videos")
+
+    ys = yt.streams.get_highest_resolution()
+    path = ys.download('temp/videos')
+    return path
+
+
+@app.post("/analyseVideo")
+def analyse_video(video_url: str, background_tasks: BackgroundTasks):
+    session_id = uuid.uuid4().__str__()
+    video_ref = client.collection('video-processor-status').document(session_id).set(
+        {"session_id": session_id, "status": "processing", "result": None})
+    try:
+        video_path = download_video(video_url)
+        print("Video Path : " + video_path)
+
+        # Add the video processing task to the background
+        background_tasks.add_task(process_video_background, video_path, session_id)
+
+        return JSONResponse(content={"session_id": session_id, "status": "processing"})
+
+    except requests.exceptions.RequestException as e:
+        raise HTTPException(status_code=500, detail=f"Error downloading video: {e}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error processing video: {e}")
+
+
+@app.get("/taskStatus/{session_id}")
+def check_task_status(session_id: str):
+    docs = client.collection("video-processor-status").where("session_id", "==", session_id).stream()
+    video_processor_status = next(docs, None)
+    if video_processor_status is None:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    return JSONResponse(content=video_processor_status.to_dict())
+
+
+@app.get("/getBrandPersona")
+def get_brand_persona(user_id: str):
+    return get_brand_persona_from_firestore(user_id).to_dict()
+
+
 @app.get("/hello")
 async def root():
     return {"message": "Welcome to your FastAPI Dockerized backend!"}
 
 
-def get_brand_persona(user_id: str):
+def get_brand_persona_from_firestore(user_id: str):
     docs = client.collection("brand-persona").where("user_id", "==", user_id).stream()
     brand_persona = next(docs, None)
     if brand_persona is None:
@@ -224,9 +307,3 @@ def validate_session(session_id: str, operation: Operations):
     if session_context is None:
         raise HTTPException(status_code=404, detail="No active session.")
     # TODO: add validation on operation as well
-
-
-if __name__ == "__main__":
-    import uvicorn
-
-    uvicorn.run(app, host="localhost", port=8080)
