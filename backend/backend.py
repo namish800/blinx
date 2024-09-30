@@ -107,7 +107,7 @@ async def create_brand_persona(brand_persona_request: BrandPersonaRequestArgs = 
     doc_ref = client.collection('brand-persona').document()
     doc_ref.set(brand_persona.dict())
 
-    return {"message": "Brand persona created successfully"}
+    return {"brand_persona": brand_persona}
 
 
 @app.post("/generateBlog")
