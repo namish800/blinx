@@ -8,6 +8,7 @@ from fastapi import FastAPI, Body, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from firebase_admin import firestore, credentials
+from pytubefix import YouTube
 
 from ai.ad_gen_orchestrator import AdGenOrchestrator
 from ai.agents.facebook_ad_gen.domain.ad_gen_dto import AdGenDto
@@ -27,7 +28,6 @@ from backend.domain.enums.blog_generation_steps import BlogGenerationSteps
 from backend.domain.enums.operations import Operations
 from backend.domain.session_context import SessionContext
 from backend.domain.user import User
-from pytubefix import YouTube
 
 app = FastAPI()
 
@@ -69,12 +69,13 @@ async def create_user(user: User):
 
 @app.get("/users/{user_id}")
 async def get_user(user_id: str):
-    doc_ref = client.collection("users").document(user_id)
-    user_data = doc_ref.get().to_dict()
+    user_ref = client.collection('users').document(user_id)
+    user_doc = user_ref.get()
 
-    print(user_data)
+    if not user_doc.exists:
+        raise HTTPException(status_code=404, detail="No user found.")
     # Create a User object from the retrieved data
-    user = User(**user_data)  # Initialize a User object using the data
+    user = User(**user_doc.to_dict())  # Initialize a User object using the data
 
     return user
 
@@ -204,16 +205,16 @@ def process_video_background(video_path: str, session_id: str):
         analysis_result = process_video(video_path, session_id)
 
         # Update the status to "completed" and store the result
-        tasks_status[session_id]['status'] = 'completed'
-        tasks_status[session_id]['result'] = analysis_result
+        video_ref = client.collection('video-processor-status').document(session_id).set(
+            {"session_id": session_id, "status": "completed", "result": analysis_result})
 
         # Remove the video after processing
         os.remove(video_path)
 
     except Exception as e:
         # Handle any errors and update the status
-        tasks_status[session_id]['status'] = 'failed'
-        tasks_status[session_id]['error'] = str(e)
+        video_ref = client.collection('video-processor-status').document(session_id).set(
+            {"session_id": session_id, "status": "failed", "error": str(e)})
 
 
 def process_video(video_path, session_id):
@@ -243,7 +244,8 @@ def download_video(url):
 @app.post("/analyseVideo")
 def analyse_video(video_url: str, background_tasks: BackgroundTasks):
     session_id = uuid.uuid4().__str__()
-    tasks_status[session_id] = {"status": "processing", "result": None}
+    video_ref = client.collection('video-processor-status').document(session_id).set(
+        {"session_id": session_id, "status": "processing", "result": None})
     try:
         video_path = download_video(video_url)
         print("Video Path : " + video_path)
@@ -261,16 +263,17 @@ def analyse_video(video_url: str, background_tasks: BackgroundTasks):
 
 @app.get("/taskStatus/{session_id}")
 def check_task_status(session_id: str):
-    if session_id not in tasks_status:
-        return JSONResponse(status_code=404, content={"error": "Task not found"})
+    docs = client.collection("video-processor-status").where("session_id", "==", session_id).stream()
+    video_processor_status = next(docs, None)
+    if video_processor_status is None:
+        raise HTTPException(status_code=404, detail="Task not found")
 
-    status_info = tasks_status[session_id]
-    return JSONResponse(content=status_info)
+    return JSONResponse(content=video_processor_status.to_dict())
 
 
 @app.get("/getBrandPersona")
 def get_brand_persona(user_id: str):
-    return get_brand_persona_from_firestore(user_id)
+    return get_brand_persona_from_firestore(user_id).to_dict()
 
 
 @app.get("/hello")
