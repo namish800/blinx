@@ -109,12 +109,12 @@ async def create_brand_persona(brand_persona_request: BrandPersonaRequestArgs = 
     doc_ref = client.collection('brand-persona').document()
     doc_ref.set(brand_persona.dict())
 
-    return {"message": "Brand persona created successfully"}
+    return {"brand_persona": brand_persona}
 
 
 @app.post("/generateBlog")
 async def generate_blog(blog_post_request_args: BlogPostRequestArgs = Body(...)):
-    brand_persona = get_brand_persona(blog_post_request_args.user_id)
+    brand_persona = get_brand_persona_from_firestore(blog_post_request_args.user_id)
     session_id = uuid.uuid4().__str__()
 
     # Placeholder logic for blog post generation
@@ -155,7 +155,7 @@ async def resume_blog_generation(blog_post_continue_request_args: BlogPostContin
 @app.post("/generateAd")
 async def generate_ad(ad_gen_request_args: AdGenerationRequestArgs = Body(...)):
     session_id = None
-    brand_persona = get_brand_persona(ad_gen_request_args.user_id)
+    brand_persona = get_brand_persona_from_firestore(ad_gen_request_args.user_id)
     return_item = None
     orchestrator = AdGenOrchestrator()
     if ad_gen_request_args.ad_gen_step == AdGenerationSteps.REQUEST:
@@ -184,7 +184,7 @@ async def generate_ad(ad_gen_request_args: AdGenerationRequestArgs = Body(...)):
 async def generate_instagram_post(instagram_post_request_args: InstagramPostRequestArgs = Body(...)):
     session_id = uuid.uuid4().__str__()
     orchestrator = InstagramPostGenOrchestrator()
-    brand_persona = get_brand_persona(instagram_post_request_args.user_id)
+    brand_persona = get_brand_persona_from_firestore(instagram_post_request_args.user_id)
     instagram_post_data = PostGenDto(objective=instagram_post_request_args.objective,
                                      brand_persona=brand_persona.to_dict(),
                                      max_posts=instagram_post_request_args.max_posts,
@@ -268,12 +268,17 @@ def check_task_status(session_id: str):
     return JSONResponse(content=status_info)
 
 
+@app.get("/getBrandPersona")
+def get_brand_persona(user_id: str):
+    return get_brand_persona_from_firestore(user_id)
+
+
 @app.get("/hello")
 async def root():
     return {"message": "Welcome to your FastAPI Dockerized backend!"}
 
 
-def get_brand_persona(user_id: str):
+def get_brand_persona_from_firestore(user_id: str):
     docs = client.collection("brand-persona").where("user_id", "==", user_id).stream()
     brand_persona = next(docs, None)
     if brand_persona is None:
