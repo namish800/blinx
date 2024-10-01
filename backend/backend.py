@@ -199,8 +199,10 @@ async def generate_instagram_post(instagram_post_request_args: InstagramPostRequ
 tasks_status = {}
 
 
-def process_video_background(video_path: str, session_id: str):
+def process_video_background(video_url: str, session_id: str):
     try:
+        video_path = download_video(video_url)
+        print("Video Path : " + video_path)
         # Process the video (placeholder for your actual processing code)
         analysis_result = process_video(video_path, session_id)
 
@@ -247,11 +249,8 @@ def analyse_video(video_url: str, background_tasks: BackgroundTasks):
     video_ref = client.collection('video-processor-status').document(session_id).set(
         {"session_id": session_id, "status": "processing", "result": None})
     try:
-        video_path = download_video(video_url)
-        print("Video Path : " + video_path)
-
         # Add the video processing task to the background
-        background_tasks.add_task(process_video_background, video_path, session_id)
+        background_tasks.add_task(process_video_background, video_url, session_id)
 
         return JSONResponse(content={"session_id": session_id, "status": "processing"})
 
