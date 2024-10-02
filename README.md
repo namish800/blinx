@@ -61,3 +61,7 @@ Run the container:
 `POST /analyseVideo`: Starts the video to blog workflow
 
 `GET /taskStatus/{session-id}`: Polling endpoint used for fetching the status of the task
+
+## Architecture
+
+![architecture diagram](Blinx_userflow-System_Design_Architecture.jpg)
