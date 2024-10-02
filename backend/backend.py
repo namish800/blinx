@@ -106,9 +106,17 @@ async def create_brand_persona(brand_persona_request: BrandPersonaRequestArgs = 
         user_id=brand_persona_request.user_id
     )
 
-    # Add data to Firestore
-    doc_ref = client.collection('brand-persona').document()
-    doc_ref.set(brand_persona.dict())
+    # Check if a brand persona already exists for the user
+    brand_persona_query = client.collection('brand-persona').where('user_id', '==', brand_persona_request.user_id).get()
+
+    if brand_persona_query:
+        # If the brand persona exists, update the existing document
+        doc_ref = brand_persona_query[0].reference
+        doc_ref.update(brand_persona.dict())
+    else:
+        # If no brand persona exists, create a new document
+        doc_ref = client.collection('brand-persona').document()
+        doc_ref.set(brand_persona.dict())
 
     return {"brand_persona": brand_persona}
 
