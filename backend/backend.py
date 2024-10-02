@@ -1,10 +1,11 @@
 import json
 import os
+import shutil
 import uuid
 
 import firebase_admin
 import requests
-from fastapi import FastAPI, Body, HTTPException, BackgroundTasks
+from fastapi import FastAPI, Body, HTTPException, BackgroundTasks, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from firebase_admin import firestore, credentials
@@ -208,10 +209,9 @@ async def generate_instagram_post(instagram_post_request_args: InstagramPostRequ
 tasks_status = {}
 
 
-def process_video_background(video_url: str, session_id: str):
+def process_video_background(video_path: str, session_id: str):
     try:
-        video_path = download_video(video_url)
-        print("Video Path : " + video_path)
+
         # Process the video (placeholder for your actual processing code)
         analysis_result = process_video(video_path, session_id)
 
@@ -271,13 +271,25 @@ def download_video(video_url):
 
 
 @app.post("/analyseVideo")
-def analyse_video(video_url: str, background_tasks: BackgroundTasks):
+def analyse_video(background_tasks: BackgroundTasks, file: UploadFile = File(...)):
     session_id = uuid.uuid4().__str__()
     video_ref = client.collection('video-processor-status').document(session_id).set(
         {"session_id": session_id, "status": "processing", "result": None})
     try:
+        # video_path = download_video(video_url)
+        if not os.path.exists("temp/videos"):
+            os.makedirs("temp/videos")
+
+        video_path = f"temp/videos/{session_id}_{file.filename}"
+
+        # Save the uploaded file to the temporary path
+        with open(video_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+
+        print("Video Path : " + video_path)
+
         # Add the video processing task to the background
-        background_tasks.add_task(process_video_background, video_url, session_id)
+        background_tasks.add_task(process_video_background, video_path, session_id)
 
         return JSONResponse(content={"session_id": session_id, "status": "processing"})
 

@@ -21,3 +21,4 @@ mutagen==1.47.0
 pycryptodomex==3.21.0
 websockets==13.1
 yt-dlp==2024.9.27
+python-multipart==0.0.12
