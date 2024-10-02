@@ -241,6 +241,7 @@ def process_video(video_path, session_id):
 
 
 def download_video(video_url):
+    print("Downloading using ydl")
     if not os.path.exists("temp/videos"):
         os.makedirs("temp/videos")
 
