@@ -1,78 +1,63 @@
 # Blinx - Multi-Agent Generative AI for Content Creation
 
-**Blinx** is a multi-agent Generative AI system designed to streamline personalized content creation, ranging from blog posts to full-fledged marketing campaigns. This project, developed as part of a Gen AI hackathon, aims to revolutionize how brands and individuals generate tailored, data-driven content by leveraging the power of AI agents working collaboratively.
+# Blinx Backend
 
-## Project Overview
+Blinx is a Generative AI-powered platform that automates personalized text and visual content creation for marketing campaigns. This repository contains the backend code for the Blinx platform, built using **FastAPI** and integrated with **Langgraph agents** to handle various AI-driven workflows.
 
-Blinx harnesses the capabilities of multiple AI agents to produce high-quality content that adapts to specific audience segments and real-time inputs. By integrating advanced language models, natural language processing (NLP), and data analysis techniques, Blinx can generate a variety of content formats to suit diverse needs.
+## Table of Contents
+- [Overview](#overview)
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Usage](#usage)
+- [API Endpoints](#api-endpoints)
+
+
+## Overview
+
+The Blinx backend serves as the core API for managing tasks like brand voice identification, content generation (blogs, ad copies, and Instagram posts), and video-to-blog repurposing. The backend handles AI model inference, content management, and task execution.
 
 ## Features
 
-- **Multi-Agent Collaboration:** Employs a network of AI agents specialized in research, content generation, editing, and optimization to produce cohesive and impactful content.
-- **Personalized Content Creation:** Generates personalized blogs, articles, and marketing materials tailored to different audience segments.
-- **Dynamic Adaptation:** Adapts content in real-time based on input data, audience feedback, and changing trends.
-- **Brand Consistency:** Analyzes a brand's voice and tone using NLP techniques to ensure consistency across generated content.
-- **Scalable Content Generation:** From single blog posts to full-scale marketing campaigns, Blinx can scale to meet various content demands.
+- **Brand Voice Identification**: Extracts brand voice and tone from a website using NLP.
+- **Blog Creation**: AI-driven blog post generation with human oversight for editing and review.
+- **Facebook Ad Copy Generation**: Generates personalized ad copies tailored to specific audience segments.
+- **Instagram Post Creation**: Produces visually and contextually aligned content for Instagram posts.
+- **Video to SEO Blog Conversion**: Converts videos into SEO-optimized blog articles.
+- **Background Task Management**: Handles long-running tasks using FastAPI's background tasks.
+- **Polling Mechanism**: Monitors the progress of long-running AI tasks.
 
-## Installation
+## Tech Stack
 
-To set up the Blinx system locally, follow these steps:
-
-1. **Clone the Repository**
-    ```bash
-    git clone https://github.com/namish800/blinx-blog-generator.git
-    cd blinx-blog-generator
-    ```
-
-2. **Install Dependencies**
-   Ensure you have Python installed. Then, install the necessary packages:
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-3. **Configure Environment Variables**
-   Create a `.env` file or set the environment variables directly:
-    ```bash
-    GOOGLE_API_KEY=xxx
-    OPENAI_API_KEY=sk-xxx
-    LANGCHAIN_API_KEY=ls__xxx
-    LANGCHAIN_TRACING_V2=true
-    LANGCHAIN_PROJECT={PROJECT-NAME}
-    ```
-
-4. **Set Up Additional Services**
-    - For advanced functionalities like real-time adaptation, set up any additional services or APIs as specified in the documentation.
+- **FastAPI**: High-performance API framework for building backend services.
+- **Langgraph**: Used for integrating AI agents to handle specific content generation tasks.
+- **Python**: Core programming language for the backend.
+- **Docker**: Used for containerizing the application.
 
 ## Usage
 
-1. **Content Generation**
-    - Run the main script to generate content:
-      ```bash
-      python main.py
-      ```
-    - Customize the generation process by modifying configuration files or using command-line arguments.
+### Prerequisites
 
-2. **Brand Voice Analysis**
-    - Use the brand voice analysis feature to align content with a specific brand's tone:
-      ```bash
-      python analyze_brand_voice.py --url your-brand-url
-      ```
+- **Python 3.9+**
+- **Docker** (optional, if using Docker for deployment)
 
-3. **Campaign Management**
-    - Integrate with other platforms or use the built-in multi-channel integration to manage marketing campaigns:
-      ```bash
-      python manage_campaign.py --config campaign_config.yaml
-      ```
+### Build using docker
+Build the Docker image:
+`docker build -t blinx-backend .`
 
-## Configuration
+Run the container:
+`docker run -p --env-file .env 8000:8000 blinx-backend`
 
-- **Config Files:** Modify `config.yaml` and other configuration files to adjust AI model parameters, content styles, output formats, and more.
-- **Custom Scripts:** Create custom scripts using the provided modules to expand functionality or integrate new AI agents.
+## API endpoints
+`POST /createBrandPersona`: Generate a brand persona from the given url
 
-## Architecture
+`POST /generateBlog`: Starts the blog generation workflow
 
-Blinx uses a modular architecture, consisting of various AI agents, including:
-- **Content Generation Agent:** Responsible for creating the initial draft using generative AI models.
-- **Editing Agent:** Refines the content for style, grammar, and coherence.
-- **Optimization Agent:** Analyzes audience feedback and optimizes content for engagement.
-- **Brand Voice Agent:** Ensures consistency with the brand's voice by analyzing existing content.
+`POST /resumeBlogGeneration`: For human input during blog generation
+
+`POST /generateAd`: Starts the FB ad generation workflow
+
+`POST /generateInstagramPost`: Starts the Instagram post generation workflow
+
+`POST /analyseVideo`: Starts the video to blog workflow
+
+`GET /taskStatus/{session-id}`: Polling endpoint used for fetching the status of the task
