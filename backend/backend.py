@@ -28,6 +28,7 @@ from backend.domain.enums.blog_generation_steps import BlogGenerationSteps
 from backend.domain.enums.operations import Operations
 from backend.domain.session_context import SessionContext
 from backend.domain.user import User
+from yt_dlp import YoutubeDL
 
 app = FastAPI()
 
@@ -239,16 +240,33 @@ def process_video(video_path, session_id):
     return resp
 
 
-def download_video(url):
-    yt = YouTube(url)
-    print(yt.title)
-
+def download_video(video_url):
     if not os.path.exists("temp/videos"):
         os.makedirs("temp/videos")
 
-    ys = yt.streams.get_highest_resolution()
-    path = ys.download('temp/videos')
-    return path
+    download_path = './temp/videos'
+    downloaded_file_path = None  # Variable to store the path of the downloaded file
+
+    def my_hook(d):
+        nonlocal downloaded_file_path  # Access the variable from the outer scope
+        if d['status'] == 'finished':
+            downloaded_file_path = d['filename']
+            print(f"Download completed, saved to: {downloaded_file_path}")
+
+    ydl_opts = {
+        'outtmpl': f'{download_path}/%(title)s.%(ext)s',
+        'format': 'best',
+        'progress_hooks': [my_hook],  # Register the progress hook
+        # You can add more options here if needed
+    }
+
+    try:
+        with YoutubeDL(ydl_opts) as ydl:
+            ydl.download([video_url])
+        return downloaded_file_path  # Return the full path after download
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return None
 
 
 @app.post("/analyseVideo")

@@ -92,7 +92,10 @@ Add the placeholders for these images in the blog post. These placeholder should
 
 For example:
 If you want to add image to the blog post. Add the placeholder in this format: %image_timestamp=MM:SS%
+if you want to capture frame at 00:08 then return %image_timestamp=00:08%
 
+IMPORTANT!!!!
+Always the timestamp should be in format MM:SS
 Only return the final blog in the markdown format
 """
 
