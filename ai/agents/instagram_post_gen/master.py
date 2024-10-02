@@ -22,7 +22,6 @@ class InstagramPostGenAgent:
         workflow.add_node("hashtag_gen", creator.generate_instagram_hashtags)
         workflow.add_node("image_gen", creator.generate_instagram_images)
 
-        workflow.add_edge("caption_gen", "hashtag_gen")
         workflow.add_conditional_edges("caption_gen", continue_to_hashtags, ["hashtag_gen"])
         workflow.add_conditional_edges("caption_gen", continue_to_image_gen, ["image_gen"])
 

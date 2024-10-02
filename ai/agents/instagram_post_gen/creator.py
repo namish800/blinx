@@ -81,18 +81,14 @@ class Creator:
                                  "brand_persona": state.get('brand_persona'),
                                  "format_example": """
                                     {
-                                        "image_prompt": [
-                                            "image_prompt1",
-                                            "image_prompt2",
-                                            "image_prompt3",
-                                        ]
+                                        "image_prompt": "prompt for the image"
                                     }
                                  """
                                  })
 
         image_urls = []
-        for image_prompt in response['image_prompt']:
-            image_url = self.img_gen.generate_image(image_prompt)
+        if response['image_prompt']:
+            image_url = self.img_gen.generate_image(response['image_prompt'])
             image_urls.append(image_url)
 
-        return {"image_prompts": response['image_prompt'], "image_urls": image_urls}
+        return {"image_prompts": [response['image_prompt']], "image_urls": image_urls}
