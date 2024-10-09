@@ -75,6 +75,16 @@ class MarketingAgent:
         }
         return self.graph.invoke(inputs, config)
 
+    def continue_run(self, config: dict):
+        return self.graph.invoke(None, config)
+
+    def get_state(self, cfg):
+        return self.graph.get_state(cfg)
+
+    def update_state(self, config, state, node_name):
+        self.graph.update_state(config=config, values=state, as_node=node_name)
+        pass
+
 
 if __name__ == '__main__':
     agent = MarketingAgent()
@@ -100,7 +110,7 @@ if __name__ == '__main__':
                      "last_login_date": "2024-03-20 00:00:00", "total_spent": 4676.37, "transaction_frequency": 2,
                      "average_transaction_value": 2338.18, "last_transaction_date": "2024-05-09 00:00:00",
                      "number_of_transactions": 2, "favorite_payment_method": "PayPal", "purchase_channel": "in-store",
-                     "preferred_device": "desktop", "preferred_language": "French", "time_on_site": 99,
+                     "preferred_device": "desktop", "preferred_language": "Hindi", "time_on_site": 99,
                      "page_views_per_session": 5, "average_cart_value": 2338.18, "abandoned_cart_count": 5,
                      "product_browsing_history": "fly", "loyalty_program_member": False, "loyalty_points_balance": 2593,
                      "email_open_rate": 91.45, "email_click_rate": 26.97, "SMS_opt_in": False, "SMS_click_rate": 38.71,
@@ -115,7 +125,7 @@ if __name__ == '__main__':
                      "purchase_value_category": "HV", "transaction_frequency_category": "LF",
                      "product_affinity": "Jacket, Sweater, T-shirt", "discount_affinity": 20}
 
-    agent_config = {"configurable": {"thread_id": "1013"}}
+    agent_config = {"configurable": {"thread_id": "1019"}}
     resp = agent.run(brand_persona=brand_persona, customer_data=customer_data, objective=objective,
                      details=details, config=agent_config)
 

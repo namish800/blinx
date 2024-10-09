@@ -11,8 +11,16 @@ class AdGenerationRequestArgs(BaseModel):
     ad_gen_step: AdGenerationSteps
     session_id: str
 
+
 class InstagramPostRequestArgs(BaseModel):
     user_id: str
     objective: str
     max_posts: int
     include_images: bool
+
+
+class MarketingPostRequestArgs(BaseModel):
+    objective: str
+    details: str
+    file_name: str
+    user_id: str
