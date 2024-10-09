@@ -1,5 +1,6 @@
-from typing import TypedDict, List
+from typing import TypedDict, List, Annotated
 
+from operator import add
 
 class Whiteboard(TypedDict):
     customer_data: dict
@@ -15,4 +16,5 @@ class Whiteboard(TypedDict):
     email: str
     sms: str
     notification: str
+    dummy: Annotated[str, add]
 
