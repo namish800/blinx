@@ -17,4 +17,4 @@ COPY . .
 
 # Define the command to run when the container starts
 # This command runs the Uvicorn server with the specified settings
-CMD ["uvicorn", "backend.backend:app"]
+CMD ["uvicorn", "backend.backend:app", "--host", "0.0.0.0", "--port", "80"]
