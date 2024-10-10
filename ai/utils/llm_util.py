@@ -14,6 +14,8 @@ model_gemini = ChatGoogleGenerativeAI(
     # other params...
 )
 
+# model_gemini = ChatOpenAI(model="gpt-4o", temperature=0)
+
 model_openai = ChatOpenAI(model="gpt-4o", temperature=0)
 
 # text_to_image_model = DallEAPIWrapper(model_name='dall-e-3')

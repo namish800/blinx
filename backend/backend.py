@@ -2,6 +2,7 @@ import json
 import os
 import shutil
 import uuid
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import firebase_admin
 import requests
@@ -18,8 +19,10 @@ from ai.brand_persona_orchestrator import BrandPersonaOrchestrator
 from ai.domain.BlogGeneratorDto import BlogGeneratorDto
 from ai.instagram_post_gen_orchestrator import InstagramPostGenOrchestrator
 from ai.orchestrator import run_blog_gen_workflow
+from ai.personalized_marketing_orchestrator import PersonalizedMarketingOrchestrator
 from ai.video_to_blog_orchestrator import VideoToBlogOrchestrator
-from backend.domain.ad_generation_request_args import AdGenerationRequestArgs, InstagramPostRequestArgs
+from backend.domain.ad_generation_request_args import AdGenerationRequestArgs, InstagramPostRequestArgs, \
+    MarketingPostRequestArgs
 from backend.domain.blog_post_continue_steps_request_args import BlogPostContinueStepsRequestArgs
 from backend.domain.blog_post_request_args import BlogPostRequestArgs
 from backend.domain.brand_persona import BrandPersona
@@ -29,6 +32,9 @@ from backend.domain.enums.blog_generation_steps import BlogGenerationSteps
 from backend.domain.enums.operations import Operations
 from backend.domain.session_context import SessionContext
 from backend.domain.user import User
+from yt_dlp import YoutubeDL
+from firebase_admin import storage
+import pandas as pd
 
 app = FastAPI()
 
@@ -46,10 +52,11 @@ firestore_credentials = json.loads(firestore_credentials_string)
 cred = credentials.Certificate(firestore_credentials)
 
 # Initialize Firebase Admin SDK *first*
-firebase_admin.initialize_app(cred)
+firebase_admin.initialize_app(cred, {"storageBucket": "blinx-63185.appspot.com"})
 
 # Now create the Firestore client
 client = firestore.client()
+executor = ThreadPoolExecutor(max_workers=5)
 bucket = storage.bucket('blinx-63185.appspot.com')
 
 
@@ -361,6 +368,161 @@ def get_brand_persona(user_id: str):
 @app.get("/hello")
 async def root():
     return {"message": "Welcome to your FastAPI Dockerized backend!"}
+
+
+def process_chunk(chunk, session_id, brand_persona, marketing_post_request_args):
+    orchestrator = PersonalizedMarketingOrchestrator()
+    responses = []
+    for _, row in chunk.iterrows():
+        # Convert each row to a dictionary for easier processing
+        row_dict = row.to_dict()
+        # Run the personalized marketing workflow for each customer data row
+        response = orchestrator.run_workflow(
+            session_id=session_id,
+            brand_persona=brand_persona,
+            objective=marketing_post_request_args.objective,
+            details=marketing_post_request_args.details,
+            customer_data=row_dict
+        )
+        # Append the response to the list of responses
+        responses.append(response)
+    return responses
+
+
+def process_df(session_id, marketing_post_request_args: MarketingPostRequestArgs, path_to_csv):
+    brand_persona = get_brand_persona_from_firestore(marketing_post_request_args.user_id).to_dict()
+    futures = []
+    responses = []
+    result_df = None
+    # Read the CSV file in chunks to handle large datasets without using too much memory
+    with ThreadPoolExecutor(max_workers=5) as exec1:
+        for chunk in pd.read_csv(path_to_csv, chunksize=5):
+            # Submit each chunk for parallel processing
+            futures.append(
+                exec1.submit(process_chunk, chunk, session_id, brand_persona, marketing_post_request_args))
+
+        # Collect the results as they complete
+        for future in as_completed(futures):
+            responses.extend(future.result())
+
+    result_list = []
+    # Extracting data
+    for resp in responses:
+        segment_name = resp["state"]["customer_segment"][0]["segment_name"]
+        name = resp["state"]["customer_data"]["name"]
+        user_id = resp["state"]["customer_data"]["user_id"]
+        contact_email = resp["state"]["customer_data"]["email"]
+        channels = ','.join(resp["state"]["channels"])
+        sms_content = resp["state"].get("sms", "")
+        email_content = resp["state"]["email"].get("body", "")
+        email_subject = resp["state"]["email"].get("subject", "")
+        notification = resp["state"]["notification"]
+        suggested_time = resp["state"]["suggested_time"]
+        strategy_reasoning = resp['state']['targeting_strategy']['reasoning']
+        comm_channel_reasoning = resp['state']['reason']
+
+                # Create DataFrame
+        data = {
+            "segment_name": segment_name,
+            "name": name,
+            "user_id": user_id,
+            "contact_email": contact_email,
+            "channel": channels,
+            "SMS": sms_content,
+            "email_body": email_content,
+            "email_subject": email_subject,
+            "notification": notification,
+            "suggested_time": suggested_time,
+            "strategy_reasoning": strategy_reasoning,
+            "comm_channel_reasoning": comm_channel_reasoning
+
+        }
+
+        result_list += [data]
+
+    result_df = pd.DataFrame(result_list)
+    result_csv_path = f'temp/files/result_{session_id}.csv'
+    result_df.to_csv(result_csv_path, index=False)
+    bucket = storage.bucket()
+    result_blob = bucket.blob(f'results/result_{session_id}.csv')
+    result_blob.upload_from_filename(result_csv_path)
+
+    result_blob.make_public()
+
+    # Update the status to "completed" and store the result URL in Firestore
+    result_url = result_blob.public_url
+
+    os.remove(result_csv_path)
+
+    return result_url
+
+
+# def process_df(session_id, marketing_post_request_args: MarketingPostRequestArgs, path_to_csv):
+#     orchestrator = PersonalizedMarketingOrchestrator()
+#     responses = []
+#     brand_persona = get_brand_persona_from_firestore(marketing_post_request_args.user_id)
+#     for chunk in pd.read_csv(path_to_csv, chunksize=100):
+#         for _, row in chunk.iterrows():
+#             row_dict = row.to_dict()
+#             response = orchestrator.run_workflow(session_id=session_id, brand_persona=brand_persona.to_dict(),
+#                                                  objective=marketing_post_request_args.objective,
+#                                                  details=marketing_post_request_args.details,
+#                                                  customer_data=row_dict)
+#             responses.append(response)
+#
+#     return responses
+
+
+def process_df_background(session_id, path_to_csv, marketing_post_request_args: MarketingPostRequestArgs):
+    try:
+        analysis_result = process_df(session_id, marketing_post_request_args, path_to_csv)
+
+        # Update the status to "completed" and store the result
+        csv_ref = client.collection('csv-processor-status').document(session_id).set(
+            {"session_id": session_id, "status": "completed", "result": analysis_result})
+
+        # Remove the video after processing
+        os.remove(path_to_csv)
+
+    except Exception as e:
+        # Handle any errors and update the status
+        video_ref = client.collection('csv-processor-status').document(session_id).set(
+            {"session_id": session_id, "status": "failed", "error": str(e)})
+
+
+@app.post("/personalized_marketing")
+def analyze_customers(background_tasks: BackgroundTasks,
+                      marketing_post_request_args: MarketingPostRequestArgs = Body(...)):
+    session_id = uuid.uuid4().__str__()
+    csv_ref = client.collection('csv-processor-status').document(session_id).set(
+        {"session_id": session_id, "status": "processing", "result": None})
+
+    # file_location='user_attribures.csv'
+    bucket = storage.bucket()
+    blob = bucket.blob(marketing_post_request_args.file_name)
+
+    unique_id = str(uuid.uuid4())
+    if not os.path.exists("temp/files"):
+        os.makedirs("temp/files")
+    path_to_csv = f'temp/files/test_{unique_id}.csv'
+    blob.download_to_filename(path_to_csv)
+    try:
+        df = pd.read_csv(path_to_csv)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error reading CSV file: {e}")
+
+    background_tasks.add_task(process_df_background, session_id, path_to_csv, marketing_post_request_args)
+    return JSONResponse(content={"session_id": session_id, "status": "processing"})
+
+
+@app.get("/poll-csv/{session_id}")
+def get_csv_result(session_id: str):
+    docs = client.collection("csv-processor-status").where("session_id", "==", session_id).stream()
+    csv_processor_status = next(docs, None)
+    if csv_processor_status is None:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    return JSONResponse(content=csv_processor_status.to_dict())
 
 
 def get_brand_persona_from_firestore(user_id: str):
