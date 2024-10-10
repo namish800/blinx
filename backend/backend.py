@@ -5,11 +5,11 @@ import uuid
 
 import firebase_admin
 import requests
-from fastapi import FastAPI, Body, HTTPException, BackgroundTasks, UploadFile, File
+from fastapi import FastAPI, Body, HTTPException, BackgroundTasks, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from firebase_admin import firestore, credentials
-from pytubefix import YouTube
+from firebase_admin import firestore, credentials, storage
+from yt_dlp import YoutubeDL
 
 from ai.ad_gen_orchestrator import AdGenOrchestrator
 from ai.agents.facebook_ad_gen.domain.ad_gen_dto import AdGenDto
@@ -29,7 +29,6 @@ from backend.domain.enums.blog_generation_steps import BlogGenerationSteps
 from backend.domain.enums.operations import Operations
 from backend.domain.session_context import SessionContext
 from backend.domain.user import User
-from yt_dlp import YoutubeDL
 
 app = FastAPI()
 
@@ -51,6 +50,51 @@ firebase_admin.initialize_app(cred)
 
 # Now create the Firestore client
 client = firestore.client()
+bucket = storage.bucket('blinx-63185.appspot.com')
+
+
+@app.post("/uploadCSV")
+async def upload_csv(
+        file: UploadFile = File(...),
+        user_id: str = Form(...)  # Take user_id as a form field
+):
+    """Uploads a CSV file to Firebase Storage, ensuring only one file per user (upsert).
+
+    Args:
+        file (UploadFile): The CSV file to upload.
+        user_id (str): The ID of the authenticated user.
+
+    Returns:
+        JSONResponse: A JSON response containing information about the uploaded file.
+    """
+
+    # 1. Check if user exists (Implement your own validation)
+    user_ref = client.collection('users').document(user_id)
+    user_doc = user_ref.get()
+
+    if not user_doc.exists:
+        raise HTTPException(status_code=401, detail="No user found.")
+
+    # 2. Get the bucket and generate a filename
+    file_name = f"{user_id}.csv"  # Use user ID for organization
+
+    # 3. Check if a file already exists for this user
+    existing_blob = bucket.blob(file_name)
+    if existing_blob.exists():
+        # Delete the existing file
+        existing_blob.delete()
+
+    # 4. Read the contents of the CSV file
+    file_contents = await file.read()
+
+    # 5. Upload the file to Firebase Storage
+    blob = bucket.blob(file_name)
+    blob.upload_from_string(file_contents)
+
+    return JSONResponse(
+        content={"message": "CSV file uploaded successfully."},
+        status_code=200
+    )
 
 
 @app.post("/createUser")
