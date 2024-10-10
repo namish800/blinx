@@ -83,7 +83,7 @@ async def upload_csv(
         raise HTTPException(status_code=401, detail="No user found.")
 
     # 2. Get the bucket and generate a filename
-    file_name = f"{user_id}.csv"  # Use user ID for organization
+    file_name = f"{user_id}_{uuid.uuid4()}.csv"  # Use user ID for organization
 
     # 3. Check if a file already exists for this user
     existing_blob = bucket.blob(file_name)
