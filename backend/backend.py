@@ -5,11 +5,14 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import firebase_admin
+import pandas as pd
 import requests
 from fastapi import FastAPI, Body, HTTPException, BackgroundTasks, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.params import Query
 from fastapi.responses import JSONResponse
-from firebase_admin import firestore, credentials, storage
+from firebase_admin import firestore, credentials
+from firebase_admin import storage
 from yt_dlp import YoutubeDL
 
 from ai.ad_gen_orchestrator import AdGenOrchestrator
@@ -32,9 +35,6 @@ from backend.domain.enums.blog_generation_steps import BlogGenerationSteps
 from backend.domain.enums.operations import Operations
 from backend.domain.session_context import SessionContext
 from backend.domain.user import User
-from yt_dlp import YoutubeDL
-from firebase_admin import storage
-import pandas as pd
 
 app = FastAPI()
 
@@ -83,7 +83,7 @@ async def upload_csv(
         raise HTTPException(status_code=401, detail="No user found.")
 
     # 2. Get the bucket and generate a filename
-    file_name = f"{user_id}.csv"  # Use user ID for organization
+    file_name = f"{user_id}_{uuid.uuid4()}.csv"  # Use user ID for organization
 
     # 3. Check if a file already exists for this user
     existing_blob = bucket.blob(file_name)
@@ -101,6 +101,39 @@ async def upload_csv(
 
     return JSONResponse(
         content={"message": "CSV file uploaded successfully."},
+        status_code=200
+    )
+
+
+@app.get("/getCSVFiles")
+async def get_csv_files(
+        user_id: str = Query(...)
+):
+    """Retrieves all CSV files for a given user from Firebase Storage.
+
+    Args:
+        user_id (str): The ID of the authenticated user.
+
+    Returns:
+        JSONResponse: A JSON response containing a list of URLs for the user's CSV files.
+    """
+
+    user_ref = client.collection('users').document(user_id)
+    user_doc = user_ref.get()
+
+    if not user_doc.exists:
+        raise HTTPException(status_code=401, detail="No user found.")
+
+    # 3. Fetch all files with the user ID prefix
+    blobs = bucket.list_blobs(prefix=f"{user_id}")
+
+    # 4. Build a list of public URLs
+    file_objects = [
+        {"file_url": blob.public_url, "file_name": blob.name} for blob in blobs
+    ]
+
+    return JSONResponse(
+        content={"message": "CSV files retrieved successfully.", "files": file_objects},
         status_code=200
     )
 
@@ -423,7 +456,7 @@ def process_df(session_id, marketing_post_request_args: MarketingPostRequestArgs
         strategy_reasoning = resp['state']['targeting_strategy']['reasoning']
         comm_channel_reasoning = resp['state']['reason']
 
-                # Create DataFrame
+        # Create DataFrame
         data = {
             "segment_name": segment_name,
             "name": name,
