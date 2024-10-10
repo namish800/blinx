@@ -97,6 +97,7 @@ async def upload_csv(
     # 5. Upload the file to Firebase Storage
     blob = bucket.blob(file_name)
     blob.upload_from_string(file_contents)
+    blob.make_public()
 
     return JSONResponse(
         content={"message": "CSV file uploaded successfully."},
