@@ -127,10 +127,12 @@ async def get_csv_files(
     blobs = bucket.list_blobs(prefix=f"{user_id}")
 
     # 4. Build a list of public URLs
-    file_urls = [blob.public_url for blob in blobs]
+    file_objects = [
+        {"file_url": blob.public_url, "file_name": blob.name} for blob in blobs
+    ]
 
     return JSONResponse(
-        content={"message": "CSV files retrieved successfully.", "file_urls": file_urls},
+        content={"message": "CSV files retrieved successfully.", "files": file_objects},
         status_code=200
     )
 
