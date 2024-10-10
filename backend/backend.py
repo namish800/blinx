@@ -332,8 +332,9 @@ def process_chunk(chunk, session_id, brand_persona, marketing_post_request_args)
         # Convert each row to a dictionary for easier processing
         row_dict = row.to_dict()
         # Run the personalized marketing workflow for each customer data row
+        orchestrator_session = uuid.uuid4().__str__()
         response = orchestrator.run_workflow(
-            session_id=session_id,
+            session_id=orchestrator_session,
             brand_persona=brand_persona,
             objective=marketing_post_request_args.objective,
             details=marketing_post_request_args.details,
@@ -351,7 +352,7 @@ def process_df(session_id, marketing_post_request_args: MarketingPostRequestArgs
     result_df = None
     # Read the CSV file in chunks to handle large datasets without using too much memory
     with ThreadPoolExecutor(max_workers=5) as exec1:
-        for chunk in pd.read_csv(path_to_csv, chunksize=5):
+        for chunk in pd.read_csv(path_to_csv, chunksize=2):
             # Submit each chunk for parallel processing
             futures.append(
                 exec1.submit(process_chunk, chunk, session_id, brand_persona, marketing_post_request_args))
@@ -371,7 +372,7 @@ def process_df(session_id, marketing_post_request_args: MarketingPostRequestArgs
         sms_content = resp["state"].get("sms", "")
         email_content = resp["state"]["email"].get("body", "")
         email_subject = resp["state"]["email"].get("subject", "")
-        notification = resp["state"]["notification"]
+        notification = resp["state"].get("notification", "")
         suggested_time = resp["state"]["suggested_time"]
         strategy_reasoning = resp['state']['targeting_strategy']['reasoning']
         comm_channel_reasoning = resp['state']['reason']
@@ -440,6 +441,7 @@ def process_df_background(session_id, path_to_csv, marketing_post_request_args: 
         os.remove(path_to_csv)
 
     except Exception as e:
+        print(e)
         # Handle any errors and update the status
         video_ref = client.collection('csv-processor-status').document(session_id).set(
             {"session_id": session_id, "status": "failed", "error": str(e)})
@@ -463,6 +465,9 @@ def analyze_customers(background_tasks: BackgroundTasks,
     blob.download_to_filename(path_to_csv)
     try:
         df = pd.read_csv(path_to_csv)
+        df_size_5 = df.head(5)
+
+        df_size_5.to_csv(path_to_csv)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error reading CSV file: {e}")
 
