@@ -4,7 +4,7 @@ from langchain_core.messages import SystemMessage, HumanMessage
 
 from langchain_core.prompts import ChatPromptTemplate
 
-from ai.utils.llm_util import model_gemini
+from ai.utils.llm_util import model_gemini, model_openai
 from ai.agents.brand_persona.prompts.brand_voice_prompts import system_prompt
 from ai.agents.brand_persona.prompts.brand_voice_prompts import user_prompt
 from langchain_core.output_parsers import JsonOutputParser
@@ -13,7 +13,7 @@ from langchain_core.output_parsers import JsonOutputParser
 # TODO: add keyword extraction and image analysis
 class BrandPersonaAI:
     def __init__(self):
-        self.model = model_gemini
+        self.model = model_openai
 
         self.system_prompt = system_prompt
         self.user_prompt = user_prompt

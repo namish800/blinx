@@ -88,7 +88,7 @@ class Creator:
 
         image_urls = []
         if response['image_prompt']:
-            image_url = self.img_gen.generate_image(response['image_prompt'])
+            image_url = self.img_gen.generate_instagram_post(response['image_prompt'])
             image_urls.append(image_url)
 
         return {"image_prompts": [response['image_prompt']], "image_urls": image_urls}

@@ -62,8 +62,30 @@ class Creator:
         ad_copies = ad_gen_state.get("ad_copies", [])
         update_ad_copies = []
         for ad_copy in ad_copies:
-            ad_copy["background_image_url"] = self.img_gen.generate_facebook_ad_post(ad_copy.get("background_image_prompt"))
+            prompt = self.generate_image_prompt(ad_copy.get("background_image_prompt"), ad_copy.get("suggestions"))
+            ad_copy["background_image_prompt"] = prompt
+            ad_copy["background_image_url"] = self.img_gen.generate_facebook_ad_post(prompt)
             update_ad_copies.append(ad_copy)
         return {'ad_copies': update_ad_copies}
+
+    def generate_image_prompt(self, background_prompt, suggestions):
+        """
+        Combines the background image prompt with suggestions to create a detailed image generation prompt.
+
+        Args:
+            background_prompt (str): The base description of the background image.
+            suggestions (list): A list of suggestions to enhance the image prompt.
+
+        Returns:
+            str: A comprehensive prompt for image generation.
+        """
+        # Start with the background prompt
+        prompt = f"{background_prompt}"
+
+        # Add each suggestion as an additional detail
+        for suggestion in suggestions:
+            prompt += f" {suggestion}"
+
+        return prompt
 
 

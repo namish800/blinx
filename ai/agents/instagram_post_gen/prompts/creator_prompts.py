@@ -60,7 +60,7 @@ Given the following caption, generate a list of 10 relevant hashtags that will c
 """
 
 instagram_image_gen_system_prompt = """
-You are an expert in generating captivating Instagram images. Your task is to create a prompt for DALL-E to generate a visually stunning image based on the given caption and brand persona.
+You are an expert in generating captivating Instagram images. Your task is to create a prompt for text to image model to generate a visually stunning image based on the given caption and brand persona.
 
 ### Instructions:
 1. Create an image that aligns with the brand persona and the given caption.
