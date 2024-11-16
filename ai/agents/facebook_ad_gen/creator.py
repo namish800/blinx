@@ -62,9 +62,9 @@ class Creator:
         ad_copies = ad_gen_state.get("ad_copies", [])
         update_ad_copies = []
         for ad_copy in ad_copies:
-            prompt = self.generate_image_prompt(ad_copy.get("background_image_prompt"), ad_copy.get("suggestions"))
-            ad_copy["background_image_prompt"] = prompt
-            ad_copy["background_image_url"] = self.img_gen.generate_facebook_ad_post(prompt)
+            # prompt = self.generate_image_prompt(ad_copy.get("background_image_prompt"), ad_copy.get("suggestions"))
+            # ad_copy["background_image_prompt"] = prompt
+            ad_copy["background_image_url"] = self.img_gen.generate_facebook_ad_post(ad_copy.get("background_image_prompt"))
             update_ad_copies.append(ad_copy)
         return {'ad_copies': update_ad_copies}
 
