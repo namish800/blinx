@@ -36,7 +36,7 @@ Please create separate ad copies using the following copyrighting frameworks:
 
    - Identify a common problem faced by the target audience.
    - Agitate the problem to emphasize its impact.
-   - Present the Poochku Dog Poop Scooper as the ideal solution.
+   - Present the ideal solution
 
 3. **FAB (Features, Advantages, Benefits)**
 
