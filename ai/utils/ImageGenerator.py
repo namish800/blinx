@@ -80,7 +80,7 @@ class SocialMediaImageGenerator:
         """
         @retry(
             stop=stop_after_attempt(max_retries),
-            wait=wait_exponential(multiplier=1, min=60, max=120),
+            wait=wait_exponential(multiplier=1.2, min=60, max=120),
             retry=retry_if_exception_type(TooManyRequestsException)
         )
         def _generate_with_retry():

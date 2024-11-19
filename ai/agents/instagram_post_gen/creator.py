@@ -64,7 +64,7 @@ class Creator:
                                     }
                                  """
                                  })
-
+        # state key of parent graph
         return {"hashtags": response['hashtags']}
 
     def generate_instagram_images(self, state: dict):

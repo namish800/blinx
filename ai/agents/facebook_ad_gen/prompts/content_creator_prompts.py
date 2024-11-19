@@ -75,3 +75,37 @@ Example JSON Format:
 {format_example}
 
 """
+
+image_gen_sys_prompt = """
+You are an expert in generating captivating images for facebook Ads.
+Your task is to create a prompt for text to image model to generate a visually stunning image based on the given Ad Copy.
+
+### Instructions:
+1. Create an image that aligns with the brand persona and the given Ad copy.
+2. The image should be high-quality, visually appealing, and relevant to the theme.
+3. Ensure the image is suitable for Facebook/Instagram and can be used in advertising campaigns.
+4. It should follow the campaign plan.
+5. Use the visual briefs given by the chief editor.
+6. Don't include any text in the image.
+7. Generate suggestions for the designer who will put all of this together
+
+**Output format:** Please format your output in JSON format for easy readability and reference.
+Always return the response in the JSON format.
+
+Example JSON Format:
+{format_example}
+"""
+
+image_gen_user_prompt = """
+Here are the Ad details
+
+**Campaign Plan:**
+{campaign_plan}
+
+**Brand Persona:**
+{brand_persona}
+
+**Ad Copy:**
+{ad_copy}
+
+"""

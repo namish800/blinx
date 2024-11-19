@@ -7,7 +7,7 @@ _ = load_dotenv()
 
 model_gemini = ChatGoogleGenerativeAI(
     model="gemini-1.5-pro",
-    temperature=0,
+    temperature=0.7,
     max_tokens=None,
     timeout=None,
     max_retries=2,
@@ -16,6 +16,6 @@ model_gemini = ChatGoogleGenerativeAI(
 
 # model_gemini = ChatOpenAI(model="gpt-4o", temperature=0)
 
-model_openai = ChatOpenAI(model="gpt-4o", temperature=0)
+model_openai = ChatOpenAI(model="gpt-4o", temperature=0.7)
 
 # text_to_image_model = DallEAPIWrapper(model_name='dall-e-3')
