@@ -65,3 +65,6 @@ Run the container:
 ## Architecture
 
 ![architecture diagram](Blinx_userflow-System_Design_Architecture.jpg)
+
+## Demo Video:
+https://drive.google.com/file/d/1-qDJLEzyKrbVIyDnOLn02E8HozoCObhc/view?usp=drivesdk
